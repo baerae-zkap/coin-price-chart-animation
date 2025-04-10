@@ -948,7 +948,7 @@ body::after {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 24px; /* 각 단계 사이의 간격 조정 */
+    gap: 12px; /* 각 단계 사이의 간격 조정: 24px → 12px로 절반 줄임 */
 }
 
 .card.selected .animated-route {
@@ -996,14 +996,14 @@ body::after {
 /* Route Step Base Style - Now fully opaque, dimming applied selectively */
 .route-step {
     display: flex;
-    align-items: flex-start; /* 상단 정렬로 변경 */
+    align-items: flex-start;
     gap: 12px;
     opacity: 0.5;
     transition: opacity 0.3s ease-out, transform 0.3s ease-out;
-    padding: 0; /* 패딩 제거 */
+    padding: 0;
     position: relative;
-    margin-bottom: 0; /* 간격 제거 */
-    height: 42px; /* 고정 높이 설정 */
+    margin-bottom: 0;
+    height: 36px; /* 고정 높이 설정: 42px → 36px로 줄임 */
 }
 
 .route-step:last-child {
@@ -1025,83 +1025,63 @@ body::after {
     height: 100%; /* 컨테이너 높이를 꽉 채우도록 변경 */
 }
 
+/* Step Icon Wrapper - 기본 스타일 (회색) */
 .step-icon-wrapper {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    border-radius: 50% !important; /* 원형 강제 적용 */
+    background-color: var(--divider-1); /* 기본 배경색: 회색 */
     display: flex;
-    justify-content: center;
     align-items: center;
-    background-color: var(--divider-1);
-    color: var(--background-bg-1);
-    font-size: 12px;
-    font-weight: bold;
-    overflow: hidden;
-    z-index: 10;
+    justify-content: center;
     position: relative;
-    border: 1px solid var(--divider-1);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    z-index: 2;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    color: white; /* 아이콘 컬러: 흰색 */
+    overflow: hidden; /* 내부 콘텐츠가 영역을 벗어나지 않도록 설정 */
+    border: none; /* 테두리 제거 */
 }
 
 /* 아이콘 이미지 스타일 개선 */
 .step-icon-wrapper img,
 .step-icon-wrapper .icon-placeholder {
-    width: 24px;
-    height: 24px;
+    width: 18px;
+    height: 18px;
     object-fit: contain;
-    border-radius: 50%;
-}
-
-/* Checkmark style remains */
-.step-icon-wrapper.checkmark {
-    background-color: var(--cta-primary) !important;
-    color: white;
-    font-weight: bold;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 16px;
-    padding: 0;
+    display: block;
 }
 
 /* SVG 체크마크 아이콘을 위한 스타일 조정 */
-.step-icon-wrapper.checkmark svg {
-    width: 24px;
-    height: 24px;
+.step-icon-wrapper svg {
+    width: 18px;
+    height: 18px;
     display: block;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
 
-/* Active Step Icon */
+/* Active Step Icon - 활성화된 단계 (파란색) */
 .route-step.active .step-icon-wrapper {
-    background-color: var(--cta-primary);
-    color: white;
-    border: 1px solid var(--cta-primary);
-    box-shadow: 0 2px 5px rgba(0, 64, 241, 0.3);
-}
-/* Completed Step Icon - Should use checkmark class now */
-.route-step.completed .step-icon-wrapper {
-     /* Styles now handled by .checkmark class */
-}
-.route-step:not(.active):not(.completed) .step-icon-wrapper img,
-.route-step:not(.active):not(.completed) .step-icon-wrapper .icon-placeholder {
-    /* opacity: 0.7; */ /* Removed */
-    opacity: 1; /* Explicitly set opacity to 1 */
+    background-color: var(--cta-primary); /* 활성화 배경색: 파란색 */
+    transform: scale(1.1);
 }
 
-/* Step Line - 연속된 단일 선으로 수정 */
+/* Checkmark Icon - 체크마크 효과 */
+.step-icon-wrapper.checkmark {
+    background-color: var(--cta-primary); /* 체크마크 배경색: 파란색 */
+    transform: scale(1.1);
+}
+
+/* Step Line - 기본 선과 진행 선 겹치도록 수정 */
 .step-line {
     width: 2px;
-    background-color: var(--divider-1); /* 비활성화 상태에서는 회색 */
+    background-color: var(--divider-1);
     position: absolute;
-    top: 28px; /* 아이콘 하단에서 시작 */
-    height: calc(100% + 10px); /* 다음 아이콘까지의 높이 + 약간의 여유 */
+    top: 24px; /* 아이콘의 중앙에서 시작하도록 조정 */
+    height: calc(100% + 12px); /* 충분한 여유 추가 */
     left: 50%;
     transform: translateX(-50%);
-    z-index: 0;
-    transition: background-color 0.4s ease, height 0.5s ease; /* 색상과 높이 변화 애니메이션 */
+    z-index: 1; /* 아이콘 뒤에 위치하도록 설정 */
 }
 
 /* 마지막 단계는 선이 없음 */
@@ -1109,25 +1089,32 @@ body::after {
     display: none;
 }
 
-/* 완료된 단계의 선은 파란색으로 표시 */
-.route-step.completed .step-line {
-    background-color: var(--cta-primary); /* 완료된 단계는 파란색 */
-}
-
-/* 활성화된 단계의 선도 파란색으로 표시 (다음 단계로 연결) */
-.route-step.active .step-line {
+/* 활성화된 단계의 진행 선 - 겹쳐서 표시하기 위해 가상 요소 사용 */
+.route-step.active .step-line::after,
+.route-step.completed .step-line::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
     background-color: var(--cta-primary);
-    animation: fillLine 0.5s ease forwards; /* 선이 채워지는 애니메이션 */
+    z-index: 1;
 }
 
-/* 선이 채워지는 애니메이션 - 아래쪽으로 확장되는 느낌 */
+/* 완료된 단계의 진행 선 - 완전히 채워짐 */
+.route-step.completed .step-line::after {
+    height: 100%;
+    transition: height 0.5s ease; /* 채워지는 애니메이션만 적용 */
+}
+
+/* 선이 채워지는 애니메이션 제거 (transition으로 대체) */
 @keyframes fillLine {
     0% {
         height: 0;
         top: 28px;
     }
     100% {
-        height: calc(100% + 10px);
+        height: calc(100% + 5px); /* 완전히 채움 시 높이: 10px → 5px로 줄임 */
         top: 28px;
     }
 }
@@ -1143,7 +1130,7 @@ body::after {
     font-weight: 500;
     color: var(--text-color-3);
     line-height: 1.5;
-    transition: color 0.3s ease, font-weight 0.3s ease;
+    transition: color 0.3s ease, font-weight 0.3s ease; /* 0.2s에서 원래값 0.3s로 복원 */
 }
 /* Active Step Text */
 .route-step.active .step-title {
@@ -1240,7 +1227,7 @@ body::after {
      position: relative;
      display: flex;
      flex-direction: column;
-     gap: 24px; /* 각 단계 사이의 간격 조정 */
+     gap: 12px; /* 각 단계 사이의 간격 조정: 24px → 12px로 절반 줄임 */
 }
 
 /* Style for the 'complete' step icon */

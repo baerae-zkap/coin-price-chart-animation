@@ -473,9 +473,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (staticIconsContainer) { staticIconsContainer.style.display = 'none'; }
         
-        // 경로 애니메이션 시작 시 카드 높이 조정은 selectCheapestCard에서 이미 처리함
-        // cardElement.style.height = '420px'; 코드 제거
-        
         routeContainer.innerHTML = '';
         const route = JSON.parse(cardElement.dataset.route || '[]');
 
@@ -487,74 +484,80 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         route.push(completeStep);
 
-        // Render all steps initially dimmed
         route.forEach((step, index) => {
             const iconKey = step.iconClass || step.key;
-            const iconInfo = routeIconMap[iconKey];
-            const fallbackLabel = iconKey.substring(0, 1).toUpperCase();
+
+            // Skip if no key or special skip condition
+            if (!iconKey) return;
+
             const stepElement = document.createElement('div');
-            stepElement.className = `route-step`; // Base class
+            stepElement.classList.add('route-step');
             
-            // 각 단계 요소에 초기 투명도 설정 (페이드인 효과용)
-            stepElement.style.opacity = '0';
+            // 처음부터 스타일 적용
+            stepElement.style.opacity = '0.5';
             stepElement.style.transform = 'translateY(10px)';
             stepElement.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+
+            // Determine icon content based on step type
+            let iconContent = '';
+            let iconWrapperClass = '';
             
-            // 간격 조정 - 일정한 간격 유지로 선이 끊어지지 않도록 함
-            stepElement.style.marginBottom = '0'; 
-            
-            // 이미지 크기 및 표시방식 개선
-            let iconContent;
-            if (step.key === 'order_complete') {
-                // 주문 완료 단계는 체크마크 아이콘 사용
-                iconContent = `<span class="icon-placeholder" style="width: 24px; height: 24px; display: flex; justify-content: center; align-items: center;">✓</span>`;
+            const iconInfo = routeIconMap[iconKey];
+            const fallbackLabel = iconKey.substring(0, 1).toUpperCase();
+
+            if (iconKey === 'checkmark') {
+                // 체크마크 단계 (주문 완료) - 초기에는 일반 스타일(회색)로 시작
+                iconContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="7 13 10.5 16 17 9"></polyline>
+                </svg>`;
+                // 'complete' 클래스 제거 - 기본 스타일(회색)로 시작
+                iconWrapperClass = '';
             } else {
+                // 일반 아이콘 단계 (거래소, 지갑 등)
                 iconContent = iconInfo && iconInfo.image
                     ? `<img src="${iconInfo.image}" alt="${iconKey}" style="width: 24px; height: 24px; object-fit: contain; display: block;">`
                     : `<span class="icon-placeholder" style="width: 24px; height: 24px; display: flex; justify-content: center; align-items: center;">${(iconInfo && iconInfo.label) || fallbackLabel}</span>`;
+                iconWrapperClass = (iconInfo && iconInfo.class) || 'default';
             }
-            
-            const iconWrapperClass = (iconInfo && iconInfo.class) || 'default';
+
             stepElement.innerHTML = `
                 <div class="step-indicator">
                      <div class="step-icon-wrapper ${iconWrapperClass}">${iconContent}</div>
                      ${index < route.length - 1 ? '<div class="step-line"></div>' : ''}
                 </div>
                 <div class="step-details">
-                    <div class="step-title">${step.title}</div>
+                    <div class="step-title" style="color: var(--text-color-1-w);">${step.title}</div>
                 </div>
             `;
             routeContainer.appendChild(stepElement);
             
-            // 각 단계 요소를 순차적으로 페이드인
+            // 각 단계 요소를 순차적으로 페이드인 (더 빠르게)
             setTimeout(() => {
                 stepElement.style.opacity = '1';
                 stepElement.style.transform = 'translateY(0)';
-            }, 300 + index * 150); // 첫 번째 요소는 0.3초 후, 이후 요소는 0.15초씩 추가 지연
+            }, 150 + index * 70); // 200ms -> 150ms, 100ms -> 70ms로 더 빠르게
         });
 
         // Animate focus moving through steps
         const stepElements = routeContainer.querySelectorAll('.route-step');
         let currentStepIndex = 0;
-        const stepInterval = 800; // 단계 간 간격 늘림 (600ms → 800ms)
+        const stepInterval = 350; // 500ms -> 350ms로 더 빠르게
         let stepTimeoutId = null;
 
         function focusNextStep() {
             // Clear previous timeout if exists
             if (stepTimeoutId) clearTimeout(stepTimeoutId);
 
-            // 첫번째 단계부터 순차적으로 체크되도록 변경
             // 현재 단계를 활성화 및 완료 표시
             if (currentStepIndex < stepElements.length) {
                 const currentStep = stepElements[currentStepIndex];
                 
-                // 먼저 활성화 클래스 추가 (선 애니메이션 시작)
+                // 1단계: 먼저 활성화 클래스만 추가 (아이콘 포커싱)
                 currentStep.classList.add('active');
                 
-                // 체크마크 표시 전 지연시간 추가 - 선 애니메이션이 완료된 후
+                // 2단계: 체크마크 표시 (더 빠르게)
                 setTimeout(() => {
-                    // 완료 표시로 변경
-                    currentStep.classList.add('completed');
+                    // 체크마크로 변경
                     const iconWrapper = currentStep.querySelector('.step-icon-wrapper');
                     if (iconWrapper) {
                         // PNG 이미지 대신 인라인 SVG 사용
@@ -565,50 +568,53 @@ document.addEventListener('DOMContentLoaded', () => {
                         `;
                         iconWrapper.classList.add('checkmark');
                     }
-                }, 500); // 500ms 지연 - 선 애니메이션(500ms)과 일치
-                
-                // 마지막 단계(주문 완료)에 도달했을 때 텍스트 변경
-                if (currentStepIndex === stepElements.length - 1) {
-                    // 카이토 인트로 텍스트 변경
-                    const kaitoIntro = document.getElementById('kaito-intro');
-                    if (kaitoIntro) {
-                        const introTextSpan = kaitoIntro.querySelector('span');
-                        if (introTextSpan) {
-                            // 텍스트 변경 (최적의 경로로 자동 구매중 -> 주문 완료!)
-                            kaitoIntro.style.transition = 'opacity 0.3s ease-out';
-                            kaitoIntro.style.opacity = '0';
-                            
-                            setTimeout(() => {
-                                // 최신 절약 금액 가져오기 (데이터에서 직접 가져옴)
-                                const exchangeName = cardElement.dataset.exchangeName;
-                                const exchange = coinData[currentCoin].exchanges.find(ex => ex.name === exchangeName);
-                                const savedAmount = exchange ? formatAmount(exchange.savingsAmount) : 
-                                                 cardElement.querySelector('.amount-value')?.textContent || '0';
-                                
-                                introTextSpan.textContent = `주문 완료! ${savedAmount}원 아꼈어요`;
-                                kaitoIntro.style.transition = 'opacity 0.3s ease-in';
-                                kaitoIntro.style.opacity = '1';
-                            }, 300);
+                    
+                    // 3단계: 체크마크 표시 후 완료 상태로 전환 (더 빠르게)
+                    setTimeout(() => {
+                        // 완료 클래스 추가 (선 애니메이션 시작)
+                        // 주의: 선이 먼저 나타났다 사라지지 않도록 active 클래스를 먼저 제거
+                        
+                        // 텍스트 색상을 회색으로 변경
+                        const stepTitle = currentStep.querySelector('.step-title');
+                        if (stepTitle) {
+                            stepTitle.style.color = 'var(--text-color-3)';
                         }
-                    }
-                }
-            }
-
-            // 다음 단계로 이동
-            currentStepIndex++;
-
-            // If we have processed all steps, no need to show final completion UI
-            if (currentStepIndex >= stepElements.length) {
+                        
+                        if (currentStepIndex < stepElements.length - 1) {
+                            // 마지막 단계가 아닐 경우에만 선 애니메이션 표시
+                            requestAnimationFrame(() => {
+                                // 레이아웃 리플로우를 강제하고, 트랜지션이 시작되기 전에 completed 클래스 추가
+                                void currentStep.offsetWidth;
+                                currentStep.classList.add('completed');
+                            });
+                        } else {
+                            // 마지막 단계는 선 없이 바로 completed 클래스만 추가
+                            currentStep.classList.add('completed');
+                        }
+                        
+                        // 4단계: 마지막 단계인 경우 완료 핸들러 호출, 아니면 다음 단계 준비
+                        if (currentStepIndex === stepElements.length - 1) {
+                            // 마지막 단계는 바로 종료 처리
+                            handleFinalStep();
+                        } else {
+                            // 5단계: 선 애니메이션 진행 후 다음 단계로 이동 (더 빠르게)
+                            setTimeout(() => {
+                                currentStepIndex++;
+                                if (currentStepIndex < stepElements.length) {
+                                    stepTimeoutId = setTimeout(focusNextStep, 150); // 200ms -> 150ms로 더 빠르게
+                                }
+                            }, 200); // 300ms -> 200ms로 더 빠르게
+                        }
+                    }, 150); // 200ms -> 150ms로 더 빠르게
+                }, 150); // 200ms -> 150ms로 더 빠르게
+            } else {
                 console.log(`모든 단계 애니메이션 완료 감지: 카드 ${cardElement.id || '(ID 없음)'}`);
-                return; // Stop further steps - 주문 완료 페이지로 전환하지 않음
+                return; // 모든 단계 완료
             }
-
-            // Move to the next step after interval
-            stepTimeoutId = setTimeout(focusNextStep, stepInterval);
         }
 
-        // 첫 번째 단계 시작 전에 딜레이 추가 (1.5초로 늘림)
-        setTimeout(focusNextStep, 1500);
+        // 첫 번째 단계 시작 전에 딜레이 추가 (더 빠르게)
+        setTimeout(focusNextStep, 500); // 800ms -> 500ms로 더 빠르게
     }
 
     // Define checkAllStepsComplete (though not strictly needed if called from focusNextStep)
@@ -646,7 +652,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 카드 배경색과 같은 배경색 설정
         orderComplete.style.backgroundColor = getComputedStyle(cardElement).backgroundColor;
         paymentComplete.style.backgroundColor = getComputedStyle(cardElement).backgroundColor;
-        cardElement.style.height = '420px'; // 높이 유지
+        cardElement.style.height = '434px'; // 높이 유지
         
         // 모든 UI 요소를 한 번에 숨기기
         const layoutContainer = cardElement.querySelector('.card-layout');
@@ -688,7 +694,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 주문 완료 표시 (애니메이션 스타일 아직 적용하지 않음)
             orderComplete.style.display = 'flex';
             
-            // 요소가 DOM에 반영되도록 더 짧은 지연 추가 (100ms에서 50ms로)
+            // 요소가 DOM에 반영되도록 더 짧은 지연 추가 (더 빠르게)
             setTimeout(() => {
                 // 요소가 표시된 후 애니메이션 다시 적용
                 if (checkMark) {
@@ -918,7 +924,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     // 선택된 카드의 높이 설정을 점진적으로 변경
                     setTimeout(() => {
-                        card.style.height = '420px'; // 높이 증가
+                        card.style.height = '434px'; // 높이 증가
                     }, 100);
                     
                     // 선택된 카드에서 amount-saved만 숨기고 레이아웃은 그대로 유지
@@ -985,11 +991,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (routeSection) {
                         routeSection.style.opacity = '1';
                         
-                        // 경로 애니메이션 즉시 시작 (지연 시간 제거)
-                        const stopAnimation = animateRoute(cheapestCard);
-                        cheapestCard.dataset.stopAnimation = stopAnimation;
+                        // 경로 애니메이션 시작 - 약간의 지연 추가 (카드 펼침이 약간 진행된 후)
+                        setTimeout(() => {
+                            const stopAnimation = animateRoute(cheapestCard);
+                            cheapestCard.dataset.stopAnimation = stopAnimation;
+                        }, 150); // 200ms -> 150ms로 더 빠르게
                     }
-                }, 200); // 기존 300ms에서 더 빠르게 200ms로 변경
+                }, 150); // 200ms -> 150ms로 더 빠르게
             }
 
             // 5단계: 카드 선택 모드로 화면 전환
@@ -1536,4 +1544,30 @@ document.addEventListener('DOMContentLoaded', () => {
             selectCard(card); // 수정된 부분: cardElement 대신 card 사용
         });
     });
+
+    // 마지막 단계 처리를 위한 함수 추출
+    function handleFinalStep() {
+        // 카이토 인트로 텍스트 변경
+        const kaitoIntro = document.getElementById('kaito-intro');
+        if (kaitoIntro) {
+            const introTextSpan = kaitoIntro.querySelector('span');
+            if (introTextSpan) {
+                // 텍스트 변경 (최적의 경로로 자동 구매중 -> 주문 완료!)
+                kaitoIntro.style.transition = 'opacity 0.3s ease-out'; // 0.2s에서 원래값 0.3s로 복원
+                kaitoIntro.style.opacity = '0';
+                
+                setTimeout(() => {
+                    // 최신 절약 금액 가져오기 (데이터에서 직접 가져옴)
+                    const exchangeName = cardElement.dataset.exchangeName;
+                    const exchange = coinData[currentCoin].exchanges.find(ex => ex.name === exchangeName);
+                    const savedAmount = exchange ? formatAmount(exchange.savingsAmount) : 
+                                     cardElement.querySelector('.amount-value')?.textContent || '0';
+                    
+                    introTextSpan.textContent = `주문 완료! ${savedAmount}원 아꼈어요`;
+                    kaitoIntro.style.transition = 'opacity 0.3s ease-in'; // 0.2s에서 원래값 0.3s로 복원
+                    kaitoIntro.style.opacity = '1';
+                }, 300); // 200ms에서 원래값 300ms로 복원
+            }
+        }
+    }
 });
