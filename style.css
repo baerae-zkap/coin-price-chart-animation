@@ -819,8 +819,8 @@ body::after {
 
 /* Style for the main coin title */
 #main-coin-title {
-    margin-top: 40px; /* 타이틀 상단 마진 */
-    margin-bottom: 8px; /* 타이틀과 부제 사이 간격 줄임 */
+    margin-top: 40px;
+    margin-bottom: 20px;
     text-align: center;
     font-size: 24px;
     line-height: 1.4;
@@ -831,7 +831,7 @@ body::after {
     align-items: center;
     gap: 8px;
     transition: opacity 0.5s ease, transform 0.5s ease;
-    min-height: auto; /* 내용에 따라 높이 자동 조절 */
+    min-height: 140px; /* 높이 늘려서 추가 텍스트 수용 */
     width: 100%;
     padding: 0 15px;
     box-sizing: border-box;
@@ -948,7 +948,7 @@ body::after {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 0;
+    gap: 24px; /* 각 단계 사이의 간격 조정 */
 }
 
 .card.selected .animated-route {
@@ -995,13 +995,15 @@ body::after {
 
 /* Route Step Base Style - Now fully opaque, dimming applied selectively */
 .route-step {
-    display: flex; /* Use flexbox for layout */
-    align-items: center; /* Vertically center items */
-    gap: 12px; /* Add some space between indicator and details */
-    opacity: 0.5; /* Dim initially */
+    display: flex;
+    align-items: flex-start; /* 상단 정렬로 변경 */
+    gap: 12px;
+    opacity: 0.5;
     transition: opacity 0.3s ease-out, transform 0.3s ease-out;
-    padding: 4px 0; /* Add some vertical padding */
+    padding: 0; /* 패딩 제거 */
     position: relative;
+    margin-bottom: 0; /* 간격 제거 */
+    height: 42px; /* 고정 높이 설정 */
 }
 
 .route-step:last-child {
@@ -1020,7 +1022,7 @@ body::after {
     margin-right: 16px;
     position: relative;
     flex-shrink: 0;
-    padding-top: 2px;
+    height: 100%; /* 컨테이너 높이를 꽉 채우도록 변경 */
 }
 
 .step-icon-wrapper {
@@ -1089,27 +1091,45 @@ body::after {
     opacity: 1; /* Explicitly set opacity to 1 */
 }
 
-/* Step Line */
+/* Step Line - 연속된 단일 선으로 수정 */
 .step-line {
     width: 2px;
-    /* Restore original color */
-    background-color: var(--text-color-3);
-    opacity: 1; /* Ensure full opacity */
+    background-color: var(--divider-1); /* 비활성화 상태에서는 회색 */
     position: absolute;
-    /* Start exactly at the bottom of the icon */
-    top: 28px;
-    /* Increased height to visually bridge the gap */
-    height: 16px;
+    top: 28px; /* 아이콘 하단에서 시작 */
+    height: calc(100% + 10px); /* 다음 아이콘까지의 높이 + 약간의 여유 */
     left: 50%;
     transform: translateX(-50%);
-    /* Ensure behind icon */
     z-index: 0;
-    transition: none;
+    transition: background-color 0.4s ease, height 0.5s ease; /* 색상과 높이 변화 애니메이션 */
 }
 
-/* Hide line for the very last step in the list */
+/* 마지막 단계는 선이 없음 */
 .route-step:last-child .step-line {
     display: none;
+}
+
+/* 완료된 단계의 선은 파란색으로 표시 */
+.route-step.completed .step-line {
+    background-color: var(--cta-primary); /* 완료된 단계는 파란색 */
+}
+
+/* 활성화된 단계의 선도 파란색으로 표시 (다음 단계로 연결) */
+.route-step.active .step-line {
+    background-color: var(--cta-primary);
+    animation: fillLine 0.5s ease forwards; /* 선이 채워지는 애니메이션 */
+}
+
+/* 선이 채워지는 애니메이션 - 아래쪽으로 확장되는 느낌 */
+@keyframes fillLine {
+    0% {
+        height: 0;
+        top: 28px;
+    }
+    100% {
+        height: calc(100% + 10px);
+        top: 28px;
+    }
 }
 
 /* Step Details (Text) */
@@ -1220,7 +1240,7 @@ body::after {
      position: relative;
      display: flex;
      flex-direction: column;
-     gap: 0;
+     gap: 24px; /* 각 단계 사이의 간격 조정 */
 }
 
 /* Style for the 'complete' step icon */

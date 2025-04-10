@@ -500,12 +500,8 @@ document.addEventListener('DOMContentLoaded', () => {
             stepElement.style.transform = 'translateY(10px)';
             stepElement.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
             
-            // 마지막 단계인 경우 더 큰 아래 여백 추가
-            if (index === route.length - 1) {
-                stepElement.style.marginBottom = '30px'; // 마지막 단계 여백 증가
-            } else {
-                stepElement.style.marginBottom = '8px'; // 일반 단계 여백 약간 증가
-            }
+            // 간격 조정 - 일정한 간격 유지로 선이 끊어지지 않도록 함
+            stepElement.style.marginBottom = '0'; 
             
             // 이미지 크기 및 표시방식 개선
             let iconContent;
@@ -541,7 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const stepElements = routeContainer.querySelectorAll('.route-step');
         let currentStepIndex = 0;
         const stepInterval = 800; // 단계 간 간격 늘림 (600ms → 800ms)
-        let stepTimeoutId = null; // To potentially cancel animation
+        let stepTimeoutId = null;
 
         function focusNextStep() {
             // Clear previous timeout if exists
@@ -551,11 +547,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // 현재 단계를 활성화 및 완료 표시
             if (currentStepIndex < stepElements.length) {
                 const currentStep = stepElements[currentStepIndex];
+                
+                // 먼저 활성화 클래스 추가 (선 애니메이션 시작)
                 currentStep.classList.add('active');
                 
-                // 체크마크 표시 전 지연시간 추가
+                // 체크마크 표시 전 지연시간 추가 - 선 애니메이션이 완료된 후
                 setTimeout(() => {
-                    // 즉시 완료 표시로 변경
+                    // 완료 표시로 변경
                     currentStep.classList.add('completed');
                     const iconWrapper = currentStep.querySelector('.step-icon-wrapper');
                     if (iconWrapper) {
@@ -567,7 +565,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         `;
                         iconWrapper.classList.add('checkmark');
                     }
-                }, 400); // 체크마크 표시 전 0.4초 대기
+                }, 500); // 500ms 지연 - 선 애니메이션(500ms)과 일치
                 
                 // 마지막 단계(주문 완료)에 도달했을 때 텍스트 변경
                 if (currentStepIndex === stepElements.length - 1) {
@@ -585,7 +583,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const exchangeName = cardElement.dataset.exchangeName;
                                 const exchange = coinData[currentCoin].exchanges.find(ex => ex.name === exchangeName);
                                 const savedAmount = exchange ? formatAmount(exchange.savingsAmount) : 
-                                                   cardElement.querySelector('.amount-value')?.textContent || '0';
+                                                 cardElement.querySelector('.amount-value')?.textContent || '0';
                                 
                                 introTextSpan.textContent = `주문 완료! ${savedAmount}원 아꼈어요`;
                                 kaitoIntro.style.transition = 'opacity 0.3s ease-in';
