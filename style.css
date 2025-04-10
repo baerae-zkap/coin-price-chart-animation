@@ -1,0 +1,1493 @@
+:root {
+    --background-bg-1: black;
+    --text-color-1-w: white;
+    --text-color-2: #E8EEF2;
+    --text-color-3: #BBC5CC;
+    --cta-primary: #0040F1;
+    --cta-tertiary: black;
+    --cta-tertiary-stroke: #3E4B55;
+    --cta-tertiary-text: #E8EEF2;
+    --divider-1: #3E4B55;
+    --brand-secondary-2: #C0C5FF;
+    --alpha-neutral-a20: rgba(0, 0, 0, 0.20);
+    --alpha-neutral-a30: rgba(0, 0, 0, 0.30);
+    --card-bg: rgba(137, 137, 137, 0.05);
+    --card-border: rgba(255, 255, 255, 0.09);
+    --icon-bg-1: #F7931A; /* BTC */
+    --icon-bg-2: #EDF0F4; /* ETH */
+    --icon-bg-3: #F0B90B; /* BNB (Example) */
+    --icon-bg-4: #00AEEF; /* Default/Placeholder */
+    --icon-bg-kbank: #381367; /* Kbank */
+    --icon-bg-upbit: #0A4EE7; /* Upbit */
+    --icon-bg-binance: #F0B90B; /* Binance */
+    --icon-bg-okx: #0077FF; /* OKX */
+    --icon-bg-tether: #50AF95; /* Tether */
+
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background-color: var(--background-bg-1);
+    font-family: 'Spoqa Han Sans Neo', sans-serif;
+    color: var(--text-color-2);
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Add pseudo-element for bottom glow */
+body::after {
+    content: '';
+    position: absolute;
+    bottom: -15%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 150%;
+    height: 40%;
+    background: radial-gradient(ellipse at bottom, rgba(0, 64, 241, 0.3) 0%, rgba(0, 64, 241, 0) 70%);
+    filter: blur(50px);
+    z-index: 0;
+    border-radius: 50%;
+    transition: opacity 0.5s ease-out; /* Allow fading out */
+}
+
+#app-container {
+    max-width: 390px;
+    height: 100vh;
+    margin: 0 auto;
+    position: relative;
+    background: radial-gradient(ellipse at top, rgba(0, 40, 150, 0.2) 0%, transparent 60%),
+                radial-gradient(ellipse at bottom, rgba(0, 64, 241, 0.15) 0%, transparent 60%),
+                var(--background-bg-1);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    z-index: 1;
+}
+
+#card-container {
+    width: 100%;
+    margin-top: 24px;
+    position: relative;
+    max-height: 620px;
+    height: auto;
+    flex-shrink: 0;
+    transition: min-height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    background: transparent;
+}
+
+.card {
+    width: 100%;
+    height: 176px;
+    position: absolute;
+    left: 0;
+    background: var(--card-bg);
+    border-radius: 30px;
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(75px);
+    padding: 27px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    opacity: 0;
+    transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 1.2s cubic-bezier(0.4, 0, 0.2, 1), 
+                height 1s cubic-bezier(0.4, 0, 0.2, 1), 
+                min-height 1s cubic-bezier(0.4, 0, 0.2, 1), 
+                z-index 0s 0.5s;
+    overflow: hidden;
+    z-index: 1;
+}
+
+/* 2~4번째 카드는 높이를 줄임 */
+#card2, #card3, #card4 {
+    height: 120px;
+    padding: 16px 16px;
+}
+
+/* Assign top positions - 카드 높이에 맞게 조정 */
+#card1 { top: 0; }
+#card2 { top: calc(176px + 16px); } /* 첫 번째 카드 아래에 위치 */
+#card3 { top: calc(176px + 16px + 120px + 16px); } /* 두 번째 카드 아래에 위치 */
+#card4 { top: calc(176px + 16px + (120px + 16px) * 2); } /* 세 번째 카드 아래에 위치 */
+
+/* Common pseudo-element styles for gradients */
+.card::before,
+.card::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.05; /* 은은하게 조정 */
+    filter: blur(90px);
+    z-index: -1;
+    transition: opacity 0.5s ease;
+}
+
+/* 거래소별 카드 그라데이션 */
+
+/* Bybit 카드 - 노랑/주황색 그라데이션 */
+.card.card-bybit::before {
+    width: 220px;
+    height: 120px;
+    background: #7a6625; /* 노란색 */
+    top: 0px;
+    left: 40px;
+}
+
+.card.card-bybit::after {
+    width: 170px;
+    height: 120px;
+    background: #9f631a; /* 주황색 */
+    bottom: 10px;
+    right: 30px;
+    opacity: 0.2;
+}
+
+/* Uniswap 카드 - 분홍/보라색 그라데이션 */
+.card.card-uniswap::before {
+    width: 220px;
+    height: 120px;
+    background: #FF007A; /* 분홍색 */
+    top: 0px;
+    left: 50px;
+}
+
+.card.card-uniswap::after {
+    width: 170px;
+    height: 120px;
+    background: #BD22FF; /* 보라색 */
+    bottom: 10px;
+    right: 20px;
+    opacity: 0.2;
+}
+
+/* Upbit 카드 - 파란색 그라데이션 */
+.card.card-upbit::before {
+    width: 220px;
+    height: 120px;
+    background: #0A4EE7; /* 진한 파란색 */
+    top: 0px;
+    left: 60px;
+}
+
+.card.card-upbit::after {
+    width: 170px;
+    height: 120px;
+    background: #00AEEF; /* 밝은 파란색 */
+    bottom: 10px;
+    right: 25px;
+    opacity: 0.2;
+}
+
+/* Bitget 카드 - 청록색 그라데이션 */
+.card.card-bitget::before {
+    width: 220px;
+    height: 120px;
+    background: #00D6AF; /* 청록색 */
+    top: 0px;
+    left: 70px;
+}
+
+.card.card-bitget::after {
+    width: 170px;
+    height: 120px;
+    background: #11A9BC; /* 진한 청록색 */
+    bottom: 10px;
+    right: 35px;
+    opacity: 0.2;
+}
+
+/* 다른 거래소 추가 */
+
+/* Binance 카드 */
+.card.card-binance::before {
+    width: 200px;
+    height: 120px;
+    background: #F0B90B; /* 바이낸스 노란색 */
+    top: 0px;
+    left: 80px;
+}
+
+.card.card-binance::after {
+    width: 160px;
+    height: 120px;
+    background: #333333;
+    bottom: 10px;
+    right: 40px;
+    opacity: 0.15;
+}
+
+/* OKX 카드 */
+.card.card-okx::before {
+    width: 200px;
+    height: 120px;
+    background: #0077FF;
+    top: 0px;
+    left: 90px;
+}
+
+.card.card-okx::after {
+    width: 160px;
+    height: 120px;
+    background: #00C1EB;
+    bottom: 10px;
+    right: 30px;
+    opacity: 0.2;
+}
+
+/* Coinone 카드 */
+.card.card-coinone::before {
+    width: 200px;
+    height: 120px;
+    background: #0077C9;
+    top: 0px;
+    left: 65px;
+}
+
+.card.card-coinone::after {
+    width: 160px;
+    height: 120px;
+    background: #5EB2FF;
+    bottom: 10px;
+    right: 25px;
+    opacity: 0.2;
+}
+
+/* Bithumb 카드 */
+.card.card-bithumb::before {
+    width: 200px;
+    height: 120px;
+    background: #D7352F;
+    top: 0px;
+    left: 75px;
+}
+
+.card.card-bithumb::after {
+    width: 160px;
+    height: 120px;
+    background: #FF6F6A;
+    bottom: 10px;
+    right: 35px;
+    opacity: 0.2;
+}
+
+/* 카드 호버 효과 */
+.card:hover::before,
+.card:hover::after {
+    opacity: 0.25; /* 호버시 약간만 진하게 */
+}
+
+/* 선택된 카드 효과 */
+.card.selected::before,
+.card.selected::after {
+    opacity: 0.25;
+    filter: blur(70px);
+}
+
+.card.visible {
+    opacity: 1;
+    transform: translateY(0);
+    z-index: 2;
+    transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 1.2s cubic-bezier(0.1, 0.7, 0.1, 1), 
+                z-index 0s;
+}
+
+.card.hidden-above {
+    transform: translateY(-30px);
+    opacity: 0;
+    transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card.hidden-below {
+    transform: translateY(30px);
+    opacity: 0;
+    transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+    padding-bottom: 10px;
+    transition: opacity 0.3s ease-out;
+}
+
+.exchange-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.coin-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+    font-weight: bold;
+    color: black;
+    position: relative;
+}
+
+/* Specific icon styles */
+.coin-icon.btc { background-color: var(--icon-bg-1); }
+.coin-icon.eth { background-color: var(--icon-bg-2); }
+.coin-icon.bnb { background-color: var(--icon-bg-3); }
+
+.coin-name {
+    color: var(--text-color-3);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 20px;
+    letter-spacing: 0.42px;
+}
+
+.savings-badge {
+    padding: 4px 8px;
+    background: var(--alpha-neutral-a20);
+    border-radius: 8px;
+    color: var(--brand-secondary-2);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 20px;
+    letter-spacing: 0.36px;
+}
+
+.route-section {
+    position: relative;
+    width: 100%;
+    height: 24px;
+    margin-top: 30px;
+}
+
+.route-line {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--divider-1);
+    transform: translateY(-50%);
+    border-radius: 1px;
+}
+
+.route-icons {
+    display: flex;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.route-icons .route-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #8396A2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    margin-left: -10px;
+}
+
+.route-icons .route-icon:first-child {
+    margin-left: 0;
+}
+
+.route-icon img, .route-icon .icon-placeholder {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    object-fit: contain;
+}
+
+.route-icon.kbank { background-color: var(--icon-bg-kbank); }
+.route-icon.upbit { background-color: var(--icon-bg-upbit); }
+.route-icon.binance { background-color: var(--icon-bg-binance); }
+.route-icon.okx { background-color: var(--icon-bg-okx); }
+.route-icon.tether { background-color: var(--icon-bg-tether); }
+
+.amount-saved {
+    width: 100%;
+    text-align: center;
+    color: var(--text-color-2);
+    font-size: 20px;
+    font-family: Spoqa Han Sans Neo;
+    font-weight: 700;
+    line-height: 28px;
+    letter-spacing: 0.48px;
+    margin-top: 24px;
+    transition: opacity 0.3s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.amount-value {
+    display: inline-block;
+    min-width: 5ch;
+    text-align: right;
+}
+
+#countdown-text {
+    font-size: 13px;
+    color: var(--text-color-3);
+    text-align: center;
+    margin-top: 16px;
+    margin-bottom: 24px;
+    transition: opacity 0.5s ease;
+}
+
+.text-section {
+    margin-top: auto;
+    padding-top: 30px;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    transition: opacity 0.4s cubic-bezier(0.65, 0, 0.35, 1), 
+                transform 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.main-title {
+    color: var(--text-color-2);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 30px;
+    margin-bottom: 16px;
+}
+
+/* Style for coin icon within main-title - Use ID for specificity */
+#main-coin-title .coin-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    line-height: 32px;
+    flex-shrink: 0;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.sub-title {
+    color: var(--text-color-3);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+    letter-spacing: 0.56px;
+}
+
+.button-container {
+    padding: 24px 0 40px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+    z-index: 1;
+    transition: opacity 0.4s cubic-bezier(0.65, 0, 0.35, 1), 
+                transform 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.btn {
+    width: 100%;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: 'Spoqa Han Sans Neo', sans-serif;
+    font-weight: 500;
+    line-height: 24px;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn.primary {
+    background: var(--cta-primary);
+    color: var(--text-color-1-w);
+}
+
+.btn.tertiary {
+    background: var(--cta-tertiary);
+    color: var(--cta-tertiary-text);
+    outline: 1px solid var(--cta-tertiary-stroke);
+    outline-offset: -1px;
+}
+
+/* Status bar placeholder - adjust height as needed */
+/* This is handled by #app-container padding-top now */
+
+/* Styles for slider */
+#slider-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.screen {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 24px 36px;
+    overflow: hidden;
+}
+
+/* Adjust padding for individual screens */
+#screen1,
+#screen2,
+#screen3 {
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+/* Ensure content padding divs allow bottom content to be pushed down */
+#screen2 .content-padding,
+#screen3 .content-padding {
+     flex-grow: 1;
+     display: flex;
+     flex-direction: column;
+     width: 100%;
+     padding: 0;
+}
+
+/* Screen 3 Specific Styles */
+.asset-card-container {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.asset-card {
+    background-color: rgba(137, 137, 137, 0.05);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    padding: 20px 16px;
+    position: relative;
+}
+
+.asset-main {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.asset-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    margin-right: 12px;
+    color: black;
+}
+.asset-icon.btc { background-color: var(--icon-bg-1); }
+.asset-icon.eth { background-color: var(--icon-bg-2); color: #333; }
+
+.asset-name {
+    color: var(--text-color-2);
+    font-size: 16px;
+    font-weight: 500;
+    margin-right: auto;
+}
+
+.asset-total-amount,
+.detail-amount {
+    color: var(--text-color-2);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.asset-details {
+    padding-left: 21px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+}
+
+/* Connecting Lines */
+.asset-details::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: -8px;
+    bottom: 8px;
+    width: 2px;
+    background-color: var(--divider-1);
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+/* Horizontal line from vertical line to detail icon */
+.detail-item::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 50%;
+    width: 6px;
+    height: 2px;
+    background-color: var(--divider-1);
+}
+
+.detail-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+    font-weight: bold;
+    margin-right: 10px;
+    color: white;
+}
+/* Add specific colors/styles for new icons */
+.detail-icon.upbit { background-color: var(--icon-bg-upbit); }
+.detail-icon.coinone { background-color: #0077FF; }
+.detail-icon.bithumb { background-color: #F7931A; }
+.detail-icon.mywallet { background-color: #555; }
+
+.detail-name {
+    color: var(--text-color-3);
+    font-size: 14px;
+    margin-right: auto;
+}
+
+/* Screen 2 Specific Styles */
+.screen2-card {
+    width: 100%;
+    background-color: rgba(137, 137, 137, 0.05);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    padding: 24px 16px;
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+.screen2-header {
+    /* Removed margin-top as it's handled by card padding/margin */
+}
+
+.screen2-title-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-color-3);
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 16px;
+}
+
+.profile-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+}
+
+.profile-img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.profile-name {
+    color: var(--text-color-2);
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.graph-container {
+    width: 100%;
+    height: 200px;
+    position: relative;
+    overflow: hidden;
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+#line-graph {
+    width: 100%;
+    height: 100%;
+}
+
+.graph-line {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+}
+
+/* Class to trigger animation */
+.graph-line.animate {
+    animation: draw-graph 2s ease-in forwards;
+}
+
+@keyframes draw-graph {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.marker-point {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: #00FFA3;
+    border-radius: 50%;
+    border: 2px solid black;
+    box-shadow: 0 0 5px rgba(0, 255, 163, 0.7);
+}
+
+.marker-label {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+.percentage-text {
+    text-align: center;
+    color: var(--text-color-2);
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.percentage-value {
+    display: inline-block;
+    min-width: 3ch;
+    text-align: right;
+}
+
+/* Make sure existing styles don't conflict */
+#app-container {
+    padding: 0;
+}
+
+#screen1 #card-container {
+    margin-top: 24px;
+}
+
+/* Style for the new top message on Screen 1 */
+.top-message {
+    margin-bottom: 10px; /* Adjust spacing as needed */
+    text-align: center;
+    font-size: 18px; /* Slightly smaller than main title */
+    line-height: 1.4;
+    font-weight: 500;
+    color: var(--text-color-1-w);
+    transition: opacity 0.5s ease;
+    opacity: 1; /* Visible by default */
+    display: block; /* Ensure it takes space */
+    padding: 0 15px;
+    box-sizing: border-box;
+}
+
+/* Style for the main coin title */
+#main-coin-title {
+    margin-top: 40px; /* 타이틀 상단 마진 */
+    margin-bottom: 8px; /* 타이틀과 부제 사이 간격 줄임 */
+    text-align: center;
+    font-size: 24px;
+    line-height: 1.4;
+    font-weight: 500;
+    color: var(--text-color-1-w);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    min-height: auto; /* 내용에 따라 높이 자동 조절 */
+    width: 100%;
+    padding: 0 15px;
+    box-sizing: border-box;
+}
+
+/* Style for the subtitle on Screen 1 */
+#step1-subtitle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    font-size: 16px;
+    color: #555;
+}
+
+.kaito-icon {
+    width: 100%; /* Fit wrapper */
+    height: 100%; /* Fit wrapper */
+    object-fit: contain; /* Ensure the entire image fits and is centered */
+}
+
+#screen1 #countdown-text,
+#screen1 .text-section,
+#screen1 .button-container {
+    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Style for the new text section on screen 2 */
+#screen2 .text-section.screen2-text {
+    width: 100%;
+    text-align: center;
+    margin-top: 32px;
+    margin-bottom: auto;
+    padding: 0 16px;
+}
+
+#screen2 .text-section.screen2-text .main-title {
+    color: var(--text-color-2);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 30px;
+    margin-bottom: 16px;
+}
+
+#screen2 .text-section.screen2-text .sub-title {
+    color: var(--text-color-3);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+    letter-spacing: 0.56px;
+}
+
+/* New style for the bottom content wrapper */
+.bottom-content {
+    margin-top: auto;
+    width: 100%;
+    padding-top: 24px;
+}
+
+/* Adjust margins for text and buttons inside bottom-content */
+.bottom-content .text-section {
+    margin-top: 0;
+    margin-bottom: 24px;
+    padding: 0;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.bottom-content .button-container {
+    margin-top: 0;
+    margin-bottom: 34px;
+    width: 100%;
+    padding: 0 16px;
+    box-sizing: border-box;
+}
+
+/* Selection Styles */
+.card.selected {
+    transform: translateY(0);
+    height: 420px;
+    z-index: 10;
+    transition: transform 1.2s cubic-bezier(0.1, 0.7, 0.1, 1), 
+                opacity 1s cubic-bezier(0.4, 0, 0.2, 1),
+                height 1s cubic-bezier(0.4, 0, 0.2, 1),
+                z-index 0s;
+}
+
+.card.deselected {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: transform 1.2s cubic-bezier(0.1, 0.7, 0.1, 1), 
+                opacity 1s cubic-bezier(0.4, 0, 0.2, 1),
+                z-index 0s 1s;
+    z-index: 1;
+}
+
+.card.selected .card-header {
+    /* Optionally hide parts of the header if needed */
+    /* opacity: 0.5; /* Example */
+    position: relative; /* Ensure positioning context for the status message */
+}
+
+/* Hide static icons when animation starts (handled by JS now) */
+/* .selected .static-route-icons { display: none; } */
+
+/* Styles for Animated Route */
+.card .animated-route {
+    margin-top: 0; 
+    padding-top: 0;
+    padding-left: 0;
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.card.selected .animated-route {
+    opacity: 1;
+    max-height: 600px;
+    transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1) 0.5s, 
+                max-height 0.7s cubic-bezier(0.4, 0, 0.2, 1) 0.3s;
+}
+
+/* Completion Indicator Style */
+.route-completion {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-left: 4px;
+    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+}
+.route-completion.hidden { opacity: 0; transform: translateX(-10px); }
+.route-completion.visible { opacity: 1; transform: translateX(0); }
+
+.route-completion .step-indicator {
+     margin-right: 16px;
+     padding-top: 2px;
+}
+.route-completion .step-icon-wrapper {
+    width: 28px; height: 28px;
+    background-color: var(--cta-primary);
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+}
+.route-completion .step-title {
+    color: var(--text-color-1-w);
+    font-weight: bold;
+    font-size: 16px;
+    line-height: 1.5;
+}
+.route-completion .step-meta {
+    color: var(--text-color-3);
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+/* Route Step Base Style - Now fully opaque, dimming applied selectively */
+.route-step {
+    display: flex; /* Use flexbox for layout */
+    align-items: center; /* Vertically center items */
+    gap: 12px; /* Add some space between indicator and details */
+    opacity: 0.5; /* Dim initially */
+    transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+    padding: 4px 0; /* Add some vertical padding */
+    position: relative;
+}
+
+.route-step:last-child {
+    /* No specific style needed here now */
+}
+
+.route-step.active {
+    opacity: 1;
+}
+
+/* Step Indicator (Icon + Line) */
+.step-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-right: 16px;
+    position: relative;
+    flex-shrink: 0;
+    padding-top: 2px;
+}
+
+.step-icon-wrapper {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--divider-1);
+    color: var(--background-bg-1);
+    font-size: 12px;
+    font-weight: bold;
+    overflow: hidden;
+    z-index: 10;
+    position: relative;
+    border: 1px solid var(--divider-1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* 아이콘 이미지 스타일 개선 */
+.step-icon-wrapper img,
+.step-icon-wrapper .icon-placeholder {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    border-radius: 50%;
+}
+
+/* Checkmark style remains */
+.step-icon-wrapper.checkmark {
+    background-color: var(--cta-primary) !important;
+    color: white;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    padding: 0;
+}
+
+/* SVG 체크마크 아이콘을 위한 스타일 조정 */
+.step-icon-wrapper.checkmark svg {
+    width: 24px;
+    height: 24px;
+    display: block;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Active Step Icon */
+.route-step.active .step-icon-wrapper {
+    background-color: var(--cta-primary);
+    color: white;
+    border: 1px solid var(--cta-primary);
+    box-shadow: 0 2px 5px rgba(0, 64, 241, 0.3);
+}
+/* Completed Step Icon - Should use checkmark class now */
+.route-step.completed .step-icon-wrapper {
+     /* Styles now handled by .checkmark class */
+}
+.route-step:not(.active):not(.completed) .step-icon-wrapper img,
+.route-step:not(.active):not(.completed) .step-icon-wrapper .icon-placeholder {
+    /* opacity: 0.7; */ /* Removed */
+    opacity: 1; /* Explicitly set opacity to 1 */
+}
+
+/* Step Line */
+.step-line {
+    width: 2px;
+    /* Restore original color */
+    background-color: var(--text-color-3);
+    opacity: 1; /* Ensure full opacity */
+    position: absolute;
+    /* Start exactly at the bottom of the icon */
+    top: 28px;
+    /* Increased height to visually bridge the gap */
+    height: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    /* Ensure behind icon */
+    z-index: 0;
+    transition: none;
+}
+
+/* Hide line for the very last step in the list */
+.route-step:last-child .step-line {
+    display: none;
+}
+
+/* Step Details (Text) */
+.step-details {
+    padding-top: 0;
+    flex-grow: 1;
+}
+
+.step-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-color-3);
+    line-height: 1.5;
+    transition: color 0.3s ease, font-weight 0.3s ease;
+}
+/* Active Step Text */
+.route-step.active .step-title {
+    color: var(--text-color-1-w);
+    font-weight: bold;
+}
+/* Completed Step Text */
+.route-step.completed .step-title {
+    color: var(--text-color-3);
+    font-weight: 400;
+}
+
+/* Style for the new route progress message */
+#route-progress-message {
+    position: absolute;
+    top: 24px;
+    right: 16px;
+    color: var(--text-color-2);
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    text-align: right;
+    line-height: 1.4;
+}
+
+/* Card Header Icon Styles for Image */
+.exchange-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: black;
+    overflow: hidden;
+    position: relative;
+}
+
+.exchange-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    border-radius: inherit;
+}
+
+.exchange-icon .icon-placeholder {
+    font-size: 10px;
+    font-weight: bold;
+    line-height: 30px;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+    background-color: #ccc;
+}
+
+/* Specific backgrounds should still apply */
+.exchange-icon.binance {
+    background-color: var(--icon-bg-binance);
+}
+.exchange-icon.upbit {
+    background-color: var(--icon-bg-upbit);
+}
+
+/* Style for the new Order Status message (Reverted to absolute positioning) */
+#order-status-message {
+    position: absolute;
+    top: 0; /* Align to the top of the header */
+    right: 0; /* Align to the right of the header */
+    background-color: rgba(0, 64, 241, 0.1); /* Subtle background */
+    color: var(--cta-primary);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0; /* Initially hidden */
+    transition: opacity 0.3s ease-out;
+    display: none; /* Use display none initially */
+}
+
+.card.selected #order-status-message {
+    display: block; /* Show when card is selected */
+    /* opacity is handled by JS now */
+}
+
+/* Animated route adjustments */
+.card .animated-route {
+     margin-top: 0; 
+     padding-top: 0;
+     padding-left: 0;
+     width: 100%;
+     box-sizing: border-box;
+     position: relative;
+     display: flex;
+     flex-direction: column;
+     gap: 0;
+}
+
+/* Style for the 'complete' step icon */
+.step-icon-wrapper.complete {
+    background-color: var(--cta-primary) !important; /* Always use primary color */
+    color: white !important; /* Always use white text */
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px; /* Checkmark size */
+}
+
+/* Hide image/placeholder if present in complete step (unlikely but safe) */
+.step-icon-wrapper.complete img,
+.step-icon-wrapper.complete .icon-placeholder {
+    display: none;
+}
+
+.route-step:not(.active):not(.completed) .step-icon-wrapper img,
+.route-step:not(.active):not(.completed) .step-icon-wrapper .icon-placeholder {
+    /* opacity: 0.7; */ /* Removed */
+}
+
+/* 주문 완료 상태 스타일 */
+.order-complete {
+    position: absolute; /* 카드 컨테이너 기준 절대 위치 */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 368px; /* Revert height to fill container */
+    display: none; /* 수정: JS에서 보이도록 하기 전까지 숨김 */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--card-bg); /* 카드 배경과 동일하게 */
+    border-radius: inherit; /* 부모 radius 상속 */
+    z-index: 10; /* 다른 카드나 요소들보다 확실히 위에 오도록 설정 */
+    opacity: 0; /* 기본 숨김 */
+    visibility: hidden; /* 추가: 완전히 숨김 */
+    pointer-events: none; /* 기본 비활성 */
+    transition: opacity 0.5s ease-in-out, visibility 0s linear 0.5s; /* visibility는 지연 후 즉시 변경 */
+}
+
+.order-complete.show {
+    opacity: 1;
+    visibility: visible; /* 보이도록 설정 */
+    pointer-events: auto;
+    transition: opacity 0.5s ease-in-out, visibility 0s linear 0s; /* 즉시 visible */
+}
+
+/* 최종 체크 아이콘 SVG 스타일 및 애니메이션 (클래스명 수정됨) */
+.final-checkmark {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: block;
+    stroke-width: 4;
+    stroke: var(--cta-primary); /* 파란색 체크 */
+    stroke-miterlimit: 10;
+    margin: 0 auto 20px auto; /* 아이콘과 텍스트 사이 간격 */
+    box-shadow: inset 0px 0px 0px var(--cta-primary);
+    animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+}
+
+.final-checkmark__circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    stroke-width: 3;
+    stroke-miterlimit: 10;
+    stroke: var(--cta-primary);
+    fill: none;
+    animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.final-checkmark__check {
+    transform-origin: 50% 50%;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    stroke-width: 4; /* 체크 두께 조정 */
+    animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+}
+
+/* 완료 텍스트 스타일 */
+.complete-text {
+    color: var(--text-color-1-w); /* 흰색 텍스트 */
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+    margin: 0;
+}
+
+/* 체크 아이콘 애니메이션 Keyframes (여기서는 변경 없음) */
+@keyframes stroke {
+    100% {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes scale {
+    0%, 100% {
+        transform: none;
+    }
+    50% {
+        transform: scale3d(1.1, 1.1, 1);
+    }
+}
+
+@keyframes fill {
+    100% {
+        box-shadow: inset 0px 0px 0px 40px var(--cta-primary); /* 원 채우기 */
+    }
+}
+
+/* Payment Complete Screen */
+.payment-complete {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 368px; /* Correct height */
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    /* Explicitly remove card styles */
+    background: transparent !important;
+    border: none !important;
+    backdrop-filter: none;
+    border-radius: 0;
+    /* Remove comments for card styles */
+    /* background: var(--card-bg); */
+    /* border: 1px solid var(--card-border); */
+    /* backdrop-filter: blur(75px); */
+    /* border-radius: 30px; */
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    z-index: 15; /* Ensure it's above other card content */
+}
+
+.payment-complete.show {
+    opacity: 1;
+    /* Trigger checkmark animation when shown */
+}
+
+/* Apply animation directly to children when parent has .show */
+.payment-complete.show .final-checkmark.blue .final-checkmark__circle {
+    animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+.payment-complete.show .final-checkmark.blue .final-checkmark__check {
+    /* transform-origin is okay on base element */
+    /* stroke-dasharray/offset are okay on base element */
+    animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+}
+
+.final-checkmark.blue {
+    width: 80px; /* Slightly larger maybe */
+    height: 80px;
+    display: block;
+    margin-bottom: 20px; /* Space between check and text */
+}
+
+.final-checkmark.blue .final-checkmark__circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    stroke-width: 3; /* Thicker stroke */
+    stroke-miterlimit: 10;
+    stroke: var(--text-color-1-w); /* Change border to white */
+    fill: none;
+    /* animation property removed from here, triggered by .show class on parent */
+    animation-fill-mode: forwards; /* Keep fill mode */
+}
+
+.final-checkmark.blue .final-checkmark__check {
+    transform-origin: 50% 50%;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    stroke-width: 3; /* Thicker stroke */
+    stroke: var(--text-color-1-w); /* Change check to white */
+    fill: none;
+    /* animation property removed from here, triggered by .show class on parent */
+    animation-fill-mode: forwards; /* Keep fill mode */
+}
+
+/* Reuse existing complete-text or add specific styles */
+.payment-complete .complete-text {
+    color: var(--text-color-1-w); /* White text */
+    font-size: 18px;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* Ensure existing keyframes are sufficient, no new ones needed for blue */
+
+/* ... Rest of CSS ... */
+
+#main-coin-title {
+    margin-top: 40px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 24px;
+    line-height: 1.4;
+    font-weight: 500;
+    color: var(--text-color-1-w);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    min-height: 140px; /* 높이 늘려서 추가 텍스트 수용 */
+    width: 100%;
+    padding: 0 15px;
+    box-sizing: border-box;
+}
+
+/* 주문 완료 체크마크 스타일 */
+.order-complete svg polyline,
+.payment-complete svg polyline {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+#compare-title {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 18px;
+    font-weight: 500;
+    color: #333;
+    transition: opacity 0.3s ease;
+}
+
+/* Styles for Kaito intro section */
+.step1-intro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  font-size: 16px;
+  color: var(--text-color-3); /* Slightly muted color */
+  opacity: 1; /* Initially visible */
+  transition: opacity 0.5s ease-out; /* For hiding animation */
+}
+
+.kaito-icon-wrapper {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%; /* Make it round */
+  margin-right: 8px;
+  overflow: hidden; /* Clip the image */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--divider-1); /* Optional: Add a background color */
+}
+
+.kaito-icon {
+  width: 100%; /* Fit wrapper */
+  height: 100%; /* Fit wrapper */
+  object-fit: contain; /* Ensure the entire image fits and is centered */
+}
+
+.step1-intro span {
+  /* Styles for the text if needed */
+}
+
+/* Hide the intro when a card is selected or interaction starts */
+.step1-intro.hidden {
+  opacity: 0;
+  pointer-events: none; /* Prevent interaction when hidden */
+}
