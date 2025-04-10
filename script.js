@@ -418,7 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <!-- 가격 정보 영역 - 좌측 정렬로 통일, 여백 더 줄임 -->
                     <div class="price-section" style="margin-top:5px; text-align:left; flex-shrink:0; margin-bottom:0;">
                         <div class="price-info" style="font-size:20px; font-weight:bold;">${formatAmount(exchange.price)}원</div>
-                        <div class="amount-saved" style="font-size:14px; color:#666; margin-top:35px;">최대 <span class="amount-value">${formatAmount(exchange.savingsAmount)}</span>원 절약해요</div>
+                        <div class="amount-saved" style="font-size:14px; color:#666; margin-top:35px; visibility:visible;">최대 <span class="amount-value">${formatAmount(exchange.savingsAmount)}</span>원 절약해요</div>
                     </div>
                     
                     <!-- 경로 정보 영역 - 스크롤 없이 표시, 음수 마진으로 위로 당김 -->
@@ -581,9 +581,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             kaitoIntro.style.opacity = '0';
                             
                             setTimeout(() => {
-                                // 저장 금액 가져오기
-                                const exchange = JSON.parse(cardElement.dataset.route || '[]')[0];
-                                const savedAmount = cardElement.querySelector('.amount-value')?.textContent || '150,000';
+                                // 최신 절약 금액 가져오기 (데이터에서 직접 가져옴)
+                                const exchangeName = cardElement.dataset.exchangeName;
+                                const exchange = coinData[currentCoin].exchanges.find(ex => ex.name === exchangeName);
+                                const savedAmount = exchange ? formatAmount(exchange.savingsAmount) : 
+                                                   cardElement.querySelector('.amount-value')?.textContent || '0';
                                 
                                 introTextSpan.textContent = `주문 완료! ${savedAmount}원 아꼈어요`;
                                 kaitoIntro.style.transition = 'opacity 0.3s ease-in';
@@ -678,6 +680,11 @@ document.addEventListener('DOMContentLoaded', () => {
             orderCompleteTitle.innerHTML = '주문이 완료되었어요';
         }
 
+        // 가장 최신 절약 금액 데이터 가져오기
+        const exchangeName = cardElement.dataset.exchangeName;
+        const savedAmountValue = coinData[currentCoin]?.exchanges.find(ex => ex.name === exchangeName)?.savingsAmount || 0;
+        const savedAmountText = formatAmount(savedAmountValue);
+        
         // 딜레이 감소: 200ms에서 100ms로
         setTimeout(() => {
             // 주문 완료 표시 (애니메이션 스타일 아직 적용하지 않음)
@@ -738,7 +745,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                             
                             if (paymentCompleteSaving) {
-                                paymentCompleteSaving.innerHTML = '최대 180,000원 아꼈어요!';
+                                paymentCompleteSaving.innerHTML = `최대 ${savedAmountText}원 아꼈어요!`;
                                 paymentCompleteSaving.style.display = 'none'; // 초기에 숨김
                                 paymentCompleteSaving.style.marginTop = '100px';
                                 paymentCompleteSaving.style.fontSize = '16px';
@@ -748,7 +755,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 // 저장 금액 요소가 없는 경우 생성
                                 const savingElement = document.createElement('div');
                                 savingElement.className = 'payment-complete-saving';
-                                savingElement.innerHTML = '최대 180,000원 아꼈어요!';
+                                savingElement.innerHTML = `최대 ${savedAmountText}원 아꼈어요!`;
                                 savingElement.style.display = 'none'; // 초기에 숨김
                                 savingElement.style.marginTop = '100px';
                                 savingElement.style.fontSize = '16px';
@@ -827,13 +834,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         // 추가 텍스트 업데이트/생성
                         const paymentCompleteSaving = paymentComplete.querySelector('.payment-complete-saving');
                         if (paymentCompleteSaving) {
-                            paymentCompleteSaving.innerHTML = '최대 180,000원 아꼈어요!';
+                            paymentCompleteSaving.innerHTML = `최대 ${savedAmountText}원 아꼈어요!`;
                             paymentCompleteSaving.style.display = 'none'; // 초기에 숨김
                             paymentCompleteSaving.style.marginTop = '100px';
                         } else {
                             const savingElement = document.createElement('div');
                             savingElement.className = 'payment-complete-saving';
-                            savingElement.innerHTML = '최대 180,000원 아꼈어요!';
+                            savingElement.innerHTML = `최대 ${savedAmountText}원 아꼈어요!`;
                             savingElement.style.display = 'none'; // 초기에 숨김
                             savingElement.style.marginTop = '100px';
                             savingElement.style.fontSize = '16px';
@@ -919,6 +926,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 선택된 카드에서 amount-saved만 숨기고 레이아웃은 그대로 유지
                     const amountSavedElement = card.querySelector('.amount-saved');
                     if (amountSavedElement) {
+                        // 먼저 데이터와 일치하도록 업데이트 후 숨김 처리
+                        const currentExchange = coinData[currentCoin].exchanges.find(ex => ex.name === card.dataset.exchangeName);
+                        if (currentExchange) {
+                            const amountValueElement = amountSavedElement.querySelector('.amount-value');
+                            if (amountValueElement) {
+                                amountValueElement.textContent = formatAmount(currentExchange.savingsAmount);
+                            }
+                        }
+                        
+                        // 업데이트 후 숨김 처리
                         amountSavedElement.style.transition = 'opacity 0.7s ease';
                         amountSavedElement.style.opacity = '0';
                         setTimeout(() => {
@@ -1052,32 +1069,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                  // 클릭 이벤트 리스너 추가
                  cardElement.addEventListener('click', () => {
-                     if (cardElement.classList.contains('selected')) return;
-
-                     const kaitoIntro = document.getElementById('kaito-intro');
-                     if (kaitoIntro) {
-                         kaitoIntro.classList.add('hidden');
-                     }
-
-                     const allCards = cardContainer.querySelectorAll('.card');
-                     allCards.forEach(card => card.classList.remove('selected'));
-                     cardElement.classList.add('selected');
-                     
-                     const screen1 = document.getElementById('screen1');
-                     if (screen1) {
-                         screen1.classList.add('card-selected-mode');
-                     }
-                     
-                     allCards.forEach(otherCard => {
-                         if (otherCard !== cardElement) {
-                             otherCard.classList.add('deselected');
-                             otherCard.classList.remove('visible');
-                         }
-                     });
-                     
-                     setTimeout(() => {
-                         animateRoute(cardElement);
-                     }, 500);
+                     selectCard(cardElement);
                  });
 
                  // 카드 표시
@@ -1146,22 +1138,31 @@ document.addEventListener('DOMContentLoaded', () => {
                  }
                  
                  // 아낀 금액 업데이트 - 가격 변동과 동일한 애니메이션 적용
-                 const amountElement = card.querySelector('.amount-saved .amount-value');
-                 if (amountElement) {
-                     // 현재 표시되는 금액 확인
-                     const currentSavingsText = amountElement.textContent;
-                     const currentSavings = parseInt(currentSavingsText.replace(/[^0-9]/g, ''), 10) || 0;
-                     const newSavings = exchange.savingsAmount;
+                 const amountSavedElement = card.querySelector('.amount-saved');
+                 if (amountSavedElement) {
+                     // amount-saved 요소가 숨겨진 경우 다시 표시
+                     if (amountSavedElement.style.visibility === 'hidden') {
+                         amountSavedElement.style.visibility = 'visible';
+                         amountSavedElement.style.opacity = '1';
+                     }
                      
-                     console.log(`카드 ${card.id} 절약 금액 변경: ${formatAmount(currentSavings)} -> ${formatAmount(newSavings)}`);
-                     
-                     // 금액이 변경된 경우에만 애니메이션 적용 (0인 경우에도 애니메이션)
-                     if (currentSavings !== newSavings) {
-                         // 가격 애니메이션과 동일한 속도 적용
-                         animateCountUp(amountElement, newSavings, 1000);
-                     } else {
-                         // 변경이 없으면 그냥 텍스트 설정
-                         amountElement.textContent = formatAmount(newSavings);
+                     const amountElement = amountSavedElement.querySelector('.amount-value');
+                     if (amountElement) {
+                         // 현재 표시되는 금액 확인
+                         const currentSavingsText = amountElement.textContent;
+                         const currentSavings = parseInt(currentSavingsText.replace(/[^0-9]/g, ''), 10) || 0;
+                         const newSavings = exchange.savingsAmount;
+                         
+                         console.log(`카드 ${card.id} 절약 금액 변경: ${formatAmount(currentSavings)} -> ${formatAmount(newSavings)}`);
+                         
+                         // 금액이 변경된 경우에만 애니메이션 적용 (0인 경우에도 애니메이션)
+                         if (currentSavings !== newSavings) {
+                             // 가격 애니메이션과 동일한 속도 적용
+                             animateCountUp(amountElement, newSavings, 1000);
+                         } else {
+                             // 변경이 없으면 그냥 텍스트 설정
+                             amountElement.textContent = formatAmount(newSavings);
+                         }
                      }
                  }
                  
@@ -1302,8 +1303,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 저장 금액도 함께 업데이트 (0 이하가 되지 않도록)
                     // 실제 가격 차이의 약 40% 수준으로 절약 금액 계산 (더 현실적인 금액)
                     const realSavings = Math.max(0, basePrice - newPrice);
-                    exchangeToUpdate.savingsAmount = Math.floor(realSavings * 0.4);
-                    console.log(` - ${exchangeName} 절약 금액: ${formatAmount(exchangeToUpdate.savingsAmount)}원 (실제 차액의 40%)`);
+                    
+                    // 같은 거래소라도 동적인 절약 금액 표시를 위해 변동폭 추가 (±20% 범위)
+                    // 원래 절약 금액의 80%~120% 범위 내에서 약간의 변동을 줌
+                    const randomFactor = 0.8 + (Math.random() * 0.4); // 0.8~1.2 사이의 랜덤 값
+                    exchangeToUpdate.savingsAmount = Math.floor(realSavings * 0.4 * randomFactor);
+                    
+                    console.log(` - ${exchangeName} 절약 금액: ${formatAmount(exchangeToUpdate.savingsAmount)}원 (실제 차액의 40% × ${randomFactor.toFixed(2)})`);
 
                     if (newPrice < minOtherPrice) {
                         minOtherPrice = newPrice;
@@ -1320,10 +1326,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // 바이빗의 저장 금액 계산 (가격 변동 후)
             // 기본 절약 금액 계산 - 다른 거래소와 동일하게 실제 가격 차이의 40% 수준으로 계산
             const baseSavings = Math.max(0, basePrice - bybitNewPrice);
-            const realSavings = Math.floor(baseSavings * 0.4);
             
-            // 변동 후 최소 보장 금액 (초기값보다 약간 작게 설정)
-            const minSavingsAfterChange = 25000; // 변동 후 최소 보장 금액 25,000원 (초기 25,000원보다 작음)
+            // 변동된 가격에 따라 절약 금액도 살짝 증가 (기존 25,000보다 약간 높게)
+            const minSavingsAfterChange = 27000; // 변동 후 최소 보장 금액 수정 (25,000 -> 27,000)
+            
+            // 약간의 변동성 추가
+            const bybitRandomFactor = 0.95 + (Math.random() * 0.1); // 0.95~1.05 사이의 랜덤 값
+            const realSavings = Math.floor(baseSavings * 0.4 * bybitRandomFactor);
             
             // 최소 보장 금액과 실제 계산 금액 중 큰 값 사용
             bybitExchange.savingsAmount = Math.max(minSavingsAfterChange, realSavings);
@@ -1341,14 +1350,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // 가격 변동 후 카드 업데이트 전에 더 긴 딜레이 추가 (2초 더 기다림)
             setTimeout(() => {
                 updateCards(currentCoin);
-            }, 2000); // 가격 재할당 후 업데이트까지 2초 대기
-        }, 2000); // 초기 로딩 후 3.5초 뒤 가격 변경 시작
-
-        // 마지막 카드가 나타난 후(약 1.25초) + 1.5초 더 머문 후 카드 선택
-        if (selectCardTimeoutId) clearTimeout(selectCardTimeoutId);
-        selectCardTimeoutId = setTimeout(() => {
-            selectCheapestCard();
-        }, 6000); // 카드 정렬 후 빠르게 최저가 카드 선택 (13초 → 6초)
+                
+                // 가격 변동된 카드가 표시된 후 1.5초 지연 후 자동 선택 시작
+                if (selectCardTimeoutId) clearTimeout(selectCardTimeoutId);
+                selectCardTimeoutId = setTimeout(() => {
+                    selectCheapestCard();
+                }, 4000); // 가격 변동 후 4초 지연 (1.5초에서 4초로 증가)
+            }, 4000); // 가격 재할당 후 업데이트까지 4초 대기
+        }, 0); // 초기 로딩 후 바로 가격 변경 시작 (1초에서 0초로 변경)
 
         // 카운트다운 텍스트 숨기기
         if (countdownTextElement) {
@@ -1488,38 +1497,45 @@ document.addEventListener('DOMContentLoaded', () => {
         screen3Button.addEventListener('click', () => goToScreen(0)); // 3번 화면에서도 1번 화면으로 돌아감
     }
 
+    // 카드 선택 및 관련 UI 업데이트를 처리하는 함수 추출
+    function selectCard(cardElement) {
+        if (!cardElement || cardElement.classList.contains('selected')) return;
+        
+        // Kaito 인트로 숨기기
+        const kaitoIntro = document.getElementById('kaito-intro');
+        if (kaitoIntro) {
+            kaitoIntro.classList.add('hidden');
+        }
+        
+        // 카드 선택 상태 업데이트
+        const allCards = cardContainer.querySelectorAll('.card');
+        allCards.forEach(card => card.classList.remove('selected'));
+        cardElement.classList.add('selected');
+        
+        // 화면 모드 변경
+        const screen1 = document.getElementById('screen1');
+        if (screen1) {
+            screen1.classList.add('card-selected-mode');
+        }
+        
+        // 다른 카드 숨기기
+        allCards.forEach(otherCard => {
+            if (otherCard !== cardElement) {
+                otherCard.classList.add('deselected');
+                otherCard.classList.remove('visible');
+            }
+        });
+        
+        // 경로 애니메이션 시작
+        setTimeout(() => {
+            animateRoute(cardElement);
+        }, 500);
+    }
+
     // Add click event listener to each card
     cardContainer.querySelectorAll('.card').forEach(card => {
         card.addEventListener('click', () => {
-            if (card.classList.contains('selected')) return; // 이미 선택된 카드는 무시
-
-            // Hide the Kaito intro section when any card is clicked
-            const kaitoIntro = document.getElementById('kaito-intro');
-            if (kaitoIntro) {
-                kaitoIntro.classList.add('hidden');
-            }
-
-            // 기존 카드 선택 로직
-            const allCards = cardContainer.querySelectorAll('.card');
-            allCards.forEach(card => card.classList.remove('selected'));
-            cardElement.classList.add('selected');
-            
-            const screen1 = document.getElementById('screen1');
-            if (screen1) {
-                screen1.classList.add('card-selected-mode');
-                console.log("card-selected-mode class added to screen1");
-            }
-            
-            allCards.forEach(otherCard => {
-                if (otherCard !== cardElement) {
-                    otherCard.classList.add('deselected');
-                    otherCard.classList.remove('visible');
-                }
-            });
-            
-            setTimeout(() => {
-                animateRoute(cardElement);
-            }, 500);
+            selectCard(card); // 수정된 부분: cardElement 대신 card 사용
         });
     });
 });
