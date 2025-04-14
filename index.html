@@ -15,7 +15,19 @@
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-        gtag('config', 'G-XXXXXXXXXX');
+        gtag('config', 'G-XXXXXXXXXX', {
+            'send_page_view': true,
+            'cookie_flags': 'secure;samesite=none',
+            'user_properties': {
+                'source': 'landing_page'
+            }
+        });
+
+        // 전환 추적을 위한 이벤트 헬퍼 함수
+        function trackEvent(event_name, parameters) {
+            gtag('event', event_name, parameters || {});
+            console.log('GA Event:', event_name, parameters || {});
+        }
     </script>
     
     <!-- Microsoft Clarity -->

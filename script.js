@@ -1622,6 +1622,14 @@ document.addEventListener('DOMContentLoaded', () => {
         preSignupBtn.addEventListener('click', function() {
             console.log('사전예약 버튼 클릭됨!'); // 클릭 이벤트가 발생했는지 확인하는 로그
             
+            // GA4 이벤트 트래킹 - CTA 버튼 클릭
+            if (typeof trackEvent === 'function') {
+                trackEvent('cta_button_click', {
+                    'button_text': preSignupBtn.textContent,
+                    'page_location': window.location.pathname
+                });
+            }
+            
             // 간단한 모달 창 생성
             const modal = document.createElement('div');
             modal.className = 'signup-modal';
@@ -1635,6 +1643,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 <path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>`;
             closeBtn.onclick = function() {
+                // GA4 이벤트 트래킹 - 모달 닫기 (제출 전)
+                if (typeof trackEvent === 'function') {
+                    trackEvent('modal_close', {
+                        'method': 'close_button',
+                        'stage': 'before_submit'
+                    });
+                }
                 document.body.removeChild(modal);
             };
             
@@ -1656,6 +1671,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 폼 제출 시 감사 메시지 표시
                 modalContent.innerHTML = '';
                 
+                // GA4 이벤트 트래킹 - 이메일 제출 완료 (전환)
+                if (typeof trackEvent === 'function') {
+                    trackEvent('signup_complete', {
+                        'method': 'email',
+                        'value': 1,
+                        'email_domain': inputEmail.value.split('@')[1] || 'unknown'
+                    });
+                }
+                
                 const thankTitle = document.createElement('h3');
                 thankTitle.textContent = '사전예약이 완료되었어요!';
                 
@@ -1665,6 +1689,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const closeThankBtn = document.createElement('button');
                 closeThankBtn.textContent = '확인';
                 closeThankBtn.onclick = function() {
+                    // GA4 이벤트 트래킹 - 모달 닫기 (제출 후)
+                    if (typeof trackEvent === 'function') {
+                        trackEvent('modal_close', {
+                            'method': 'confirm_button',
+                            'stage': 'after_submit'
+                        });
+                    }
                     document.body.removeChild(modal);
                 };
                 
