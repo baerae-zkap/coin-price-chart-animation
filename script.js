@@ -592,32 +592,119 @@ document.addEventListener('DOMContentLoaded', () => {
                             currentStep.classList.add('completed');
                         }
                         
-                        // 4단계: 마지막 단계인 경우 완료 핸들러 호출, 아니면 다음 단계 준비
+                        // 모든 단계가 완료되었는지 확인하고 스피너를 체크 아이콘으로 변경
                         if (currentStepIndex === stepElements.length - 1) {
-                            // 마지막 단계는 바로 종료 처리 -> showFinalCompletion 호출
-                            // handleFinalStep(); // 이 줄 삭제
-                            showFinalCompletion(cardElement, 500); // 500ms 지연 후 최종 완료 표시
-
-                            // 텍스트 업데이트 확실히 적용되도록 추가 호출
+                            // 마지막 단계가 완료되면 스피너를 체크 아이콘으로 변경
                             setTimeout(() => {
-                                const kaitoIntroElement = document.getElementById('kaito-intro');
-                                if (kaitoIntroElement) {
-                                    const selectedExchangePrice = parseInt(cardElement.dataset.price, 10) || 0;
-                                    const currentCoinSymbol = cardElement.dataset.coinSymbol || currentCoin;
-                                    const currentCoinPrice = coinData[currentCoinSymbol] ? coinData[currentCoinSymbol].price : 0;
-                                    
-                                    // 거래소 데이터에서 절약 금액 직접 가져오기
-                                    const exchangeName = cardElement.dataset.exchangeName;
-                                    const exchange = coinData[currentCoinSymbol].exchanges.find(ex => ex.name === exchangeName);
-                                    const savingsAmount = exchange ? exchange.savingsAmount : (currentCoinPrice - selectedExchangePrice);
-                                    
-                                    const introSpan = kaitoIntroElement.querySelector('span');
-                                    if (introSpan) {
-                                        introSpan.textContent = `최대 ${formatAmount(savingsAmount)}원 아꼈어요!`;
-                                        console.log(`[강제 업데이트 수정] kaito-intro 업데이트: 최대 ${formatAmount(savingsAmount)}원 아꼈어요!`);
+                                const kaitoIntro = document.getElementById('kaito-intro');
+                                if (kaitoIntro) {
+                                    const introTextSpan = kaitoIntro.querySelector('span');
+                                    if (introTextSpan) {
+                                        // 스피너 요소 찾기
+                                        const spinner = introTextSpan.querySelector('.loading-spinner');
+                                        if (spinner) {
+                                            // 스피너의 위치와 크기를 기억
+                                            const spinnerRect = spinner.getBoundingClientRect();
+                                            const spinnerWidth = spinnerRect.width;
+                                            const spinnerHeight = spinnerRect.height;
+                                            
+                                            // 스피너를 감싸는 컨테이너 생성
+                                            const iconContainer = document.createElement('div');
+                                            iconContainer.className = 'icon-container';
+                                            iconContainer.style.cssText = `
+                                                display: inline-block;
+                                                width: ${spinnerWidth}px;
+                                                height: ${spinnerHeight}px;
+                                                position: relative;
+                                                margin-right: 8px;
+                                                vertical-align: middle;
+                                            `;
+                                            
+                                            // 체크 아이콘 생성
+                                            const checkIcon = document.createElement('div');
+                                            checkIcon.className = 'check-icon';
+                                            checkIcon.innerHTML = `
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#5D5FEF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="6 12 10 16 18 8"></polyline>
+                                                </svg>
+                                            `;
+                                            checkIcon.style.cssText = `
+                                                position: absolute;
+                                                left: 0;
+                                                top: 0;
+                                                width: 100%;
+                                                height: 100%;
+                                                display: flex;
+                                                align-items: center;
+                                                justify-content: center;
+                                                opacity: 0;
+                                                transition: opacity 0.3s ease;
+                                            `;
+                                            
+                                            // 텍스트 저장
+                                            const textContent = introTextSpan.textContent.replace(/^\s*[\S\s]*?최적의/, '최적의').trim();
+                                            
+                                            // 기존 스피너는 대체할 컨테이너에 추가
+                                            spinner.style.transition = 'opacity 0.3s ease';
+                                            spinner.style.opacity = '0';
+                                            
+                                            // 스피너를 컨테이너로 대체
+                                            iconContainer.appendChild(spinner);
+                                            iconContainer.appendChild(checkIcon);
+                                            
+                                            // 기존 내용 지우고 새 컨테이너와 텍스트 추가
+                                            introTextSpan.innerHTML = '';
+                                            introTextSpan.appendChild(iconContainer);
+                                            introTextSpan.appendChild(document.createTextNode(' ' + textContent));
+                                            
+                                            // 애니메이션 타이밍에 맞춰 스피너를 숨기고 체크 아이콘 표시
+                                            setTimeout(() => {
+                                                checkIcon.style.opacity = '1';
+                                            }, 300);
+                                        } else {
+                                            // 스피너가 없는 경우 새로 아이콘 생성
+                                            const iconContainer = document.createElement('div');
+                                            iconContainer.className = 'icon-container';
+                                            iconContainer.style.cssText = `
+                                                display: inline-block;
+                                                width: 16px;
+                                                height: 16px;
+                                                position: relative;
+                                                margin-right: 8px;
+                                                vertical-align: middle;
+                                            `;
+                                            
+                                            const checkIcon = document.createElement('div');
+                                            checkIcon.className = 'check-icon';
+                                            checkIcon.innerHTML = `
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#5D5FEF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="6 12 10 16 18 8"></polyline>
+                                                </svg>
+                                            `;
+                                            checkIcon.style.cssText = `
+                                                position: absolute;
+                                                left: 0;
+                                                top: 0;
+                                                width: 100%;
+                                                height: 100%;
+                                                display: flex;
+                                                align-items: center;
+                                                justify-content: center;
+                                            `;
+                                            
+                                            iconContainer.appendChild(checkIcon);
+                                            
+                                            // 기존 내용 지우고 새 컨테이너와 텍스트 추가
+                                            introTextSpan.innerHTML = '';
+                                            introTextSpan.appendChild(iconContainer);
+                                            introTextSpan.appendChild(document.createTextNode(' 최적의 경로로 자동으로 구매해요'));
+                                        }
                                     }
                                 }
-                            }, 2000); // 모든 애니메이션이 끝난 후 강제로 텍스트 업데이트
+                            }, 500);
+                            
+                            // 최종 완료 처리
+                            showFinalCompletion(cardElement, 500); // 500ms 지연 후 최종 완료 표시
                         } else {
                             // 5단계: 선 애니메이션 진행 후 다음 단계로 이동 (더 빠르게)
                             setTimeout(() => {
@@ -884,7 +971,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     const introTextSpan = kaitoIntro.querySelector('span');
                     
                     if (iconWrapper) iconWrapper.style.display = 'none';
-                    if (introTextSpan) introTextSpan.textContent = '최적의 경로로 자동 구매중이에요.';
+                    
+                    // 로딩 스피너 생성 및 추가
+                    const spinner = document.createElement('div');
+                    spinner.className = 'loading-spinner';
+                    spinner.style.cssText = `
+                        display: inline-block;
+                        width: 16px;
+                        height: 16px;
+                        border: 2px solid transparent;
+                        border-top-color: #5D5FEF; /* 프라이머리 컬러 */
+                        border-radius: 50%;
+                        margin-right: 8px;
+                        vertical-align: middle;
+                        animation: spin 1s linear infinite;
+                    `;
+                    
+                    // 스피너 애니메이션 스타일 추가
+                    if (!document.querySelector('style#spinner-style')) {
+                        const spinnerStyle = document.createElement('style');
+                        spinnerStyle.id = 'spinner-style';
+                        spinnerStyle.textContent = `
+                            @keyframes spin {
+                                0% { transform: rotate(0deg); }
+                                100% { transform: rotate(360deg); }
+                            }
+                        `;
+                        document.head.appendChild(spinnerStyle);
+                    }
+                    
+                    if (introTextSpan) {
+                        introTextSpan.innerHTML = '';
+                        introTextSpan.appendChild(spinner);
+                        introTextSpan.appendChild(document.createTextNode(' 최적의 경로로 자동으로 구매해요'));
+                    }
                     
                     // 텍스트와 경로 섹션 동시에 페이드인 시작
                     kaitoIntro.style.transition = 'opacity 0.3s ease-in';
@@ -1458,12 +1578,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 500);
     }
 
-    // Add click event listener to each card
-    cardContainer.querySelectorAll('.card').forEach(card => {
-        card.addEventListener('click', () => {
-            selectCard(card); // 수정된 부분: cardElement 대신 card 사용
-        });
-    });
+    // Add click event listener to each card - 마우스 클릭으로 카드 선택하는 기능 제거
+    // cardContainer.querySelectorAll('.card').forEach(card => {
+    //     card.addEventListener('click', () => {
+    //         selectCard(card);
+    //     });
+    // });
 
     // 마지막 단계 처리를 위한 함수 추출
     function handleFinalStep() {
@@ -1496,8 +1616,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 사전예약 버튼 클릭 이벤트 추가
     const preSignupBtn = document.querySelector('.pre-signup-btn');
+    console.log('사전예약 버튼 요소:', preSignupBtn); // 디버깅을 위한 로그 추가
+    
     if (preSignupBtn) {
         preSignupBtn.addEventListener('click', function() {
+            console.log('사전예약 버튼 클릭됨!'); // 클릭 이벤트가 발생했는지 확인하는 로그
+            
             // 간단한 모달 창 생성
             const modal = document.createElement('div');
             modal.className = 'signup-modal';
@@ -1507,23 +1631,25 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const closeBtn = document.createElement('span');
             closeBtn.className = 'close-btn';
-            closeBtn.innerHTML = '&times;';
+            closeBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>`;
             closeBtn.onclick = function() {
                 document.body.removeChild(modal);
             };
             
             const title = document.createElement('h3');
-            title.textContent = '코인 최저가 구매, 카이토가 도와드릴게요!';
+            title.textContent = '출시되면 알려드릴게요!';
             
             const inputEmail = document.createElement('input');
             inputEmail.type = 'text';
-            inputEmail.placeholder = '이메일 또는 휴대폰 번호';
+            inputEmail.placeholder = '이메일을 입력해주세요';
             
             const submitBtn = document.createElement('button');
             submitBtn.textContent = '알림 받기';
             submitBtn.onclick = function() {
                 if (inputEmail.value.trim() === '') {
-                    alert('이메일 또는 휴대폰 번호를 입력해주세요!');
+                    alert('이메일을 입력해주세요!');
                     return;
                 }
                 
@@ -1534,7 +1660,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 thankTitle.textContent = '사전예약이 완료되었어요!';
                 
                 const thankMessage = document.createElement('p');
-                thankMessage.textContent = '카이토가 출시되면 가장 먼저 알려드릴게요. 25% 할인된 가격으로 코인을 구매하실 수 있어요!';
+                thankMessage.textContent = 'ZKAP이 출시되면 가장 먼저 알려드릴게요.';
                 
                 const closeThankBtn = document.createElement('button');
                 closeThankBtn.textContent = '확인';
@@ -1572,4 +1698,45 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+
+    // DOM 요소 선택 등 기존 초기화 코드
+    const kaitoIntro = document.getElementById('kaito-intro');
+    const statusSpan = kaitoIntro ? kaitoIntro.querySelector('span') : null; // null 체크 추가
+    const targetText = "최적의 경로로 자동 구매 진행 중";
+
+    // --- 스피너 가시성 관리 로직 --- START ---
+    if (kaitoIntro && statusSpan) { // 요소가 존재하는지 확인
+        // 스피너 표시 여부를 텍스트 내용에 따라 업데이트하는 함수
+        const updateSpinnerVisibility = () => {
+            // 앞뒤 공백 제거 후 텍스트 비교
+            if (statusSpan.textContent.trim() === targetText) {
+                kaitoIntro.classList.add('loading');
+            } else {
+                kaitoIntro.classList.remove('loading');
+            }
+        };
+
+        // 페이지 로드 시 초기 텍스트 상태 확인
+        updateSpinnerVisibility(); 
+
+        // MutationObserver를 사용하여 span 내부 텍스트 변화 감지
+        const observer = new MutationObserver((mutationsList) => {
+            for (const mutation of mutationsList) {
+                // 텍스트 내용 변경 감지 (characterData 또는 childList)
+                if (mutation.type === 'characterData' || mutation.type === 'childList') {
+                    updateSpinnerVisibility();
+                    break; // 관련된 변경이 감지되면 루프 종료
+                }
+            }
+        });
+
+        // Observer 설정: span 요소 내부의 텍스트 변경 및 자식 노드 변경 감지
+        const config = { characterData: true, childList: true, subtree: true };
+
+        // span 요소 관찰 시작
+        observer.observe(statusSpan, config);
+    } else {
+        console.error("스피너 제어를 위한 필수 요소(#kaito-intro 또는 내부 span)를 찾을 수 없습니다.");
+    }
+    // --- 스피너 가시성 관리 로직 --- END ---
 });

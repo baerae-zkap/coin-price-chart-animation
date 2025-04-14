@@ -141,17 +141,8 @@ body::after {
     }
 }
 
-.main-hook:after {
-    content: '';
-    display: block;
-    width: 80px;
-    height: 3px;
-    background-color: var(--hook-color, #00FFA3);
-    margin: 10px auto 0;
-    border-radius: 2px;
-}
 
-/* 카이토 설명 마진 조정 */
+/* Styles for Kaito intro section */
 .step1-intro {
     display: flex;
     align-items: center;
@@ -160,19 +151,19 @@ body::after {
     margin: 0 auto -10px; /* 하단 마진을 음수로 설정해 카드와 겹치게 */
     max-width: 300px;
     min-height: 42px; /* 최소 높이 설정하여 높이 고정 */
-    background: rgba(0, 0, 0, 0.85); /* 더 진한 검정 배경 */
+    background: transparent; /* 배경색 제거 */
     border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.15); /* 살짝 더 밝은 테두리 */
+    border: none; /* 테두리 제거 */
     position: relative;
     z-index: 10; /* 카드보다 위에 배치 */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); /* 더 강한 그림자 */
-    transition: background-color 0.3s ease, box-shadow 0.3s ease; /* 부드러운 전환 효과 추가 */
+    box-shadow: none; /* 그림자 제거 */
+    transition: color 0.3s ease; /* 전환 효과 수정 */
 }
 
 /* 카이토 아이콘 래퍼 스타일 추가 */
 .kaito-icon-wrapper {
-    width: 32px;
-    height: 32px;
+    width: 26px; /* 32px에서 26px로 줄임 */
+    height: 26px; /* 32px에서 26px로 줄임 */
     border-radius: 50%;
     overflow: hidden;
     background-color: black;
@@ -185,9 +176,9 @@ body::after {
 }
 
 .kaito-icon {
-    width: 24px; /* 아이콘 크기 조정 */
-    height: 24px;
-    object-fit: contain; /* 이미지 비율 유지 */
+    width: 80%; /* 100%에서 80%로 줄임 */
+    height: 80%; /* 100%에서 80%로 줄임 */
+    object-fit: contain; /* Ensure the entire image fits and is centered */
 }
 
 /* 카드 컨테이너 높이/마진 조정 */
@@ -278,6 +269,8 @@ body::after {
                 z-index 0s 0.5s;
     overflow: hidden;
     z-index: 1;
+    cursor: default;
+    pointer-events: none; /* 마우스 이벤트를 받지 않도록 설정 */
 }
 
 /* 2~4번째 카드는 높이를 줄임 */
@@ -452,10 +445,10 @@ body::after {
     opacity: 0.2;
 }
 
-/* 카드 호버 효과 */
+/* 카드 호버 효과 제거 */
 .card:hover::before,
 .card:hover::after {
-    opacity: 0.25; /* 호버시 약간만 진하게 */
+    opacity: 0.05; /* 호버 효과 제거, 기본값과 동일하게 설정 */
 }
 
 /* 선택된 카드 효과 */
@@ -1636,53 +1629,11 @@ body::after {
     transition: opacity 0.3s ease;
 }
 
-/* Styles for Kaito intro section */
-.step1-intro {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px 15px;
-    margin: 0 auto -10px; /* 하단 마진을 음수로 설정해 카드와 겹치게 */
-    max-width: 300px;
-    min-height: 42px; /* 최소 높이 설정하여 높이 고정 */
-    background: rgba(0, 0, 0, 0.85); /* 더 진한 검정 배경 */
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.15); /* 살짝 더 밝은 테두리 */
-    position: relative;
-    z-index: 10; /* 카드보다 위에 배치 */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); /* 더 강한 그림자 */
-    transition: background-color 0.3s ease, box-shadow 0.3s ease; /* 부드러운 전환 효과 추가 */
-}
-
-/* 주문 완료 시 스타일 */
-.step1-intro.completed {
-    background: rgba(0, 64, 241, 0.9); /* 파란색 배경 */
-    border-color: rgba(0, 64, 241, 0.95);
-    box-shadow: 0 4px 15px rgba(0, 64, 241, 0.5);
-}
-
-.step1-intro.completed .kaito-icon-wrapper {
-    background: white;
-    border-color: white;
-    box-shadow: none;
-}
-
-.step1-intro.completed .kaito-icon-wrapper img {
-    filter: brightness(0) invert(1); /* 아이콘 색상 반전 (선택적) */
-}
-
-.step1-intro.completed span {
-    font-weight: 700;
-    color: white;
-    font-size: 14px; /* 폰트 크기 수정 */
-    letter-spacing: -0.2px; /* 레터 스페이싱 추가 */
-}
-
 /* 기본 .step1-intro span 스타일 */
 .step1-intro span {
     font-size: 14px;
-    color: var(--text-color-1-w);
-    font-weight: 500;
+    color: var(--text-color-3); /* 더 어두운 텍스트 색상으로 변경 */
+    font-weight: 400; /* 텍스트 굵기 증가 */
     letter-spacing: -0.2px;
     transition: color 0.3s ease, font-weight 0.3s ease; /* 부드러운 전환 */
 }
@@ -1742,3 +1693,185 @@ body::after {
         padding-top: 120px; /* 그라데이션 영역 증가 */
     }
 }
+
+/* Spinner Styles */
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1); /* Light grey border */
+    border-left-color: #007bff; /* Blue spinner color */
+    border-radius: 50%;
+    width: 20px; /* Adjust size as needed */
+    height: 20px; /* Adjust size as needed */
+    animation: spin 1s linear infinite;
+    margin: 0 10px; /* Add some spacing */
+    display: none; /* 기본적으로 숨김 */
+    vertical-align: middle; /* Align vertically with text */
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* #kaito-intro에 loading 클래스가 있을 때만 스피너 표시 */
+#kaito-intro.loading .spinner {
+    display: inline-block;
+}
+
+/* Adjust kaito-intro layout if needed */
+#kaito-intro {
+    display: flex; /* Use flexbox for alignment */
+    align-items: center; /* Center items vertically */
+    justify-content: center; /* Center items horizontally (optional) */
+    /* Add other styling as needed */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease; /* existing transition */
+}
+
+/* Ensure icon and text align well with the spinner */
+.kaito-icon-wrapper, #kaito-intro span {
+    vertical-align: middle;
+}
+/* 주문 완료 시 스타일 */
+.step1-intro.completed {
+    background: rgba(0, 64, 241, 0.9); /* 파란색 배경 */
+    border-color: rgba(0, 64, 241, 0.95);
+    box-shadow: 0 4px 15px rgba(0, 64, 241, 0.5);
+}
+
+.step1-intro.completed .kaito-icon-wrapper {
+    background: white;
+    border-color: white;
+    box-shadow: none;
+}
+
+.step1-intro.completed .kaito-icon-wrapper img {
+    filter: brightness(0) invert(1); /* 아이콘 색상 반전 (선택적) */
+}
+
+.step1-intro.completed span {
+    font-weight: 700;
+    color: white;
+    font-size: 14px; /* 폰트 크기 수정 */
+    letter-spacing: -0.2px; /* 레터 스페이싱 추가 */
+}
+
+/* 모달 스타일 */
+.signup-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: #1A1D29;
+    border-radius: 24px;
+    padding: 35px 25px;
+    width: 85%;
+    max-width: 360px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 64, 241, 0.15);
+    position: relative;
+    animation: modalFadeIn 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 28px;
+    color: #999;
+    cursor: pointer;
+    transition: color 0.2s, transform 0.2s;
+    height: 28px;
+    width: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.close-btn:hover {
+    color: #fff;
+    transform: scale(1.1);
+}
+
+.modal-content h3 {
+    color: #fff;
+    font-size: 22px;
+    margin-bottom: 25px;
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+}
+
+.modal-content p {
+    color: #BBC5CC;
+    font-size: 16px;
+    margin-bottom: 25px;
+    text-align: center;
+    line-height: 1.5;
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 16px 18px;
+    margin-bottom: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    color: #fff;
+    font-size: 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.modal-content input:focus {
+    outline: none;
+    border-color: var(--cta-primary);
+    box-shadow: 0 0 0 3px rgba(0, 64, 241, 0.15);
+}
+
+.modal-content button {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    background: var(--cta-primary);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(0, 64, 241, 0.3);
+}
+
+.modal-content button:hover {
+    background: var(--cta-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 64, 241, 0.4);
+}
+
+.modal-content button:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(0, 64, 241, 0.3);
+}
+
