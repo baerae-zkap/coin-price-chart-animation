@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         { key: 'kbank_deposit_upbit', title: '케이뱅크 → 업비트 보내기', iconClass: 'kbank' },
                         { key: 'upbit_buy_usdt', title: '업비트에서 USDT 구매', iconClass: 'upbit' },
                         { key: 'usdt_transfer_bybit', title: 'USDT → 바이빗 보내기', iconClass: 'usdt' },
-                        { key: 'bybit_buy_target', title: 'Bybit에서 버추얼 프로토콜 구매', iconClass: 'bybit' }
+                        { key: 'bybit_buy_target', title: 'Bybit에서 카이토 구매', iconClass: 'bybit' }
                     ]
                 },
                 {
@@ -594,8 +594,30 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         // 4단계: 마지막 단계인 경우 완료 핸들러 호출, 아니면 다음 단계 준비
                         if (currentStepIndex === stepElements.length - 1) {
-                            // 마지막 단계는 바로 종료 처리
-                            handleFinalStep();
+                            // 마지막 단계는 바로 종료 처리 -> showFinalCompletion 호출
+                            // handleFinalStep(); // 이 줄 삭제
+                            showFinalCompletion(cardElement, 500); // 500ms 지연 후 최종 완료 표시
+
+                            // 텍스트 업데이트 확실히 적용되도록 추가 호출
+                            setTimeout(() => {
+                                const kaitoIntroElement = document.getElementById('kaito-intro');
+                                if (kaitoIntroElement) {
+                                    const selectedExchangePrice = parseInt(cardElement.dataset.price, 10) || 0;
+                                    const currentCoinSymbol = cardElement.dataset.coinSymbol || currentCoin;
+                                    const currentCoinPrice = coinData[currentCoinSymbol] ? coinData[currentCoinSymbol].price : 0;
+                                    
+                                    // 거래소 데이터에서 절약 금액 직접 가져오기
+                                    const exchangeName = cardElement.dataset.exchangeName;
+                                    const exchange = coinData[currentCoinSymbol].exchanges.find(ex => ex.name === exchangeName);
+                                    const savingsAmount = exchange ? exchange.savingsAmount : (currentCoinPrice - selectedExchangePrice);
+                                    
+                                    const introSpan = kaitoIntroElement.querySelector('span');
+                                    if (introSpan) {
+                                        introSpan.textContent = `최대 ${formatAmount(savingsAmount)}원 아꼈어요!`;
+                                        console.log(`[강제 업데이트 수정] kaito-intro 업데이트: 최대 ${formatAmount(savingsAmount)}원 아꼈어요!`);
+                                    }
+                                }
+                            }, 2000); // 모든 애니메이션이 끝난 후 강제로 텍스트 업데이트
                         } else {
                             // 5단계: 선 애니메이션 진행 후 다음 단계로 이동 (더 빠르게)
                             setTimeout(() => {
@@ -627,255 +649,136 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Define showFinalCompletion function - Takes cardElement and optional delay
     function showFinalCompletion(cardElement, delay = 0) {
-        // Log 함수 호출 및 cardElement 유효성 검사
-        console.log("[showFinalCompletion] 호출됨. cardElement:", cardElement, "delay:", delay);
+        // console.log("[showFinalCompletion] 호출됨. cardElement:", cardElement, "delay:", delay);
         if (!cardElement || !cardElement.id) {
-            console.error("[showFinalCompletion] 유효하지 않은 cardElement 또는 ID 없음:", cardElement);
+            // console.error("[showFinalCompletion] 유효하지 않은 cardElement 또는 ID 없음:", cardElement);
             return;
         }
 
-        const cardContent = cardElement.closest('#card-container');
-        if (!cardContent) {
-            console.error("[showFinalCompletion] card-container 찾기 실패. cardElement:", cardElement);
+        const cardContainer = document.getElementById('card-container');
+        if (!cardContainer) {
+            // console.error("[showFinalCompletion] card-container 찾기 실패. cardElement:", cardElement);
             return;
         }
 
-        // Try querying directly from document within the container
-        const orderComplete = document.querySelector('#card-container .order-complete');
-        const paymentComplete = document.querySelector('#card-container .payment-complete');
+        // 카이토 설명 요소 가져오기
+        const kaitoIntroElement = document.getElementById('kaito-intro');
 
-        if (!orderComplete || !paymentComplete) {
-            console.error("[showFinalCompletion] 주문 완료 또는 결제 완료 요소를 찾을 수 없음 (document query).");
+        // 주문 완료 또는 결제 완료 요소를 document에서 찾음
+        const orderCompleteElement = document.querySelector('.order-complete');
+        const paymentCompleteElement = document.querySelector('.payment-complete');
+
+        if (!orderCompleteElement || !paymentCompleteElement) {
+            // console.error("[showFinalCompletion] 주문 완료 또는 결제 완료 요소를 찾을 수 없음 (document query).");
             return;
         }
 
-        // 카드 배경색과 같은 배경색 설정
-        orderComplete.style.backgroundColor = getComputedStyle(cardElement).backgroundColor;
-        paymentComplete.style.backgroundColor = getComputedStyle(cardElement).backgroundColor;
-        cardElement.style.height = '434px'; // 높이 유지
-        
-        // 모든 UI 요소를 한 번에 숨기기
-        const layoutContainer = cardElement.querySelector('.card-layout');
-        if(layoutContainer) {
-            layoutContainer.style.transition = 'opacity 0.2s ease-out';
-            layoutContainer.style.opacity = '0';
+        // cardElement의 dataset에서 필요한 정보 가져오기
+        const selectedExchangePrice = parseInt(cardElement.dataset.price, 10) || 0;
+        const currentCoinSymbol = cardElement.dataset.coinSymbol || 'BTC'; // 기본값 BTC 또는 현재 코인 심볼
+        const currentCoinPrice = coinData[currentCoinSymbol] ? coinData[currentCoinSymbol].price : 0;
+        const savingsAmount = currentCoinPrice - selectedExchangePrice;
+
+        // 결제 완료 텍스트 설정
+        const completeTextElement = paymentCompleteElement.querySelector('.complete-text');
+        if (completeTextElement) {
+            const amountText = formatAmount(selectedExchangePrice);
+            completeTextElement.innerHTML = `${amountText}원에 결제 완료되었어요!`;
         }
 
-        // 애니메이션 상태 리셋을 위한 요소 참조 미리 가져오기
-        const checkMark = orderComplete.querySelector('.order-complete-checkmark__check');
-        const circle = orderComplete.querySelector('.order-complete-checkmark__circle');
-        
-        // 애니메이션 요소 초기화 (이미 실행된 애니메이션을 리셋)
-        if (checkMark) {
-            checkMark.style.animation = 'none';
-            // 강제 리플로우 발생
-            void checkMark.offsetWidth;
-        }
-        
-        if (circle) {
-            circle.style.animation = 'none';
-            // 강제 리플로우 발생
-            void circle.offsetWidth;
-        }
-
-        // 텍스트 업데이트 - 주문 완료 메시지 설정
-        const orderCompleteTitle = orderComplete.querySelector('.order-complete-title');
-        if (orderCompleteTitle) {
-            orderCompleteTitle.innerHTML = '주문이 완료되었어요';
-        }
-
-        // 가장 최신 절약 금액 데이터 가져오기
-        const exchangeName = cardElement.dataset.exchangeName;
-        const savedAmountValue = coinData[currentCoin]?.exchanges.find(ex => ex.name === exchangeName)?.savingsAmount || 0;
-        const savedAmountText = formatAmount(savedAmountValue);
-        
-        // 딜레이 감소: 200ms에서 100ms로
+        // 지정된 지연 후 애니메이션 시작
         setTimeout(() => {
-            // 주문 완료 표시 (애니메이션 스타일 아직 적용하지 않음)
-            orderComplete.style.display = 'flex';
-            
-            // 요소가 DOM에 반영되도록 더 짧은 지연 추가 (더 빠르게)
-            setTimeout(() => {
-                // 요소가 표시된 후 애니메이션 다시 적용
-                if (checkMark) {
-                    checkMark.style.animation = 'stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards';
-                }
-                
-                if (circle) {
-                    circle.style.animation = 'stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards';
-                }
-                
-                // 최종 표시
-                orderComplete.classList.add('show');
-                orderComplete.style.opacity = '1';
-                console.log("주문 완료 화면 표시됨");
-                
-                // 체크마크 애니메이션이 완료되면 다음 단계 진행
-                if (checkMark) {
-                    checkMark.addEventListener('animationend', function animationEndHandler() {
-                        console.log("체크마크 애니메이션 완료");
-                        // 이벤트 리스너 한 번만 실행되도록 제거
-                        checkMark.removeEventListener('animationend', animationEndHandler);
-                        
-                        // 딜레이 제거: 즉시 다음 단계로 진행
-                        // 주문 완료 화면 페이드 아웃
-                        orderComplete.style.opacity = '0';
-                        
-                        // 딜레이 단축: 300ms에서 200ms로
-                        setTimeout(() => {
-                            orderComplete.style.display = 'none';
-                            orderComplete.classList.remove('show');
-                            
-                            // 결제 완료 애니메이션 요소 초기화
-                            const finalCheckMark = paymentComplete.querySelector('.final-checkmark__check');
-                            const finalCircle = paymentComplete.querySelector('.final-checkmark__circle');
-                            
-                            if (finalCheckMark) {
-                                finalCheckMark.style.animation = 'none';
-                                void finalCheckMark.offsetWidth;
-                            }
-                            
-                            if (finalCircle) {
-                                finalCircle.style.animation = 'none';
-                                void finalCircle.offsetWidth;
-                            }
-                            
-                            // 결제 완료 메시지 업데이트
-                            const paymentCompleteTitle = paymentComplete.querySelector('.payment-complete-title');
-                            const paymentCompleteSaving = paymentComplete.querySelector('.payment-complete-saving');
-                            
-                            if (paymentCompleteTitle) {
-                                paymentCompleteTitle.innerHTML = '주문이 완료되었어요';
-                            }
-                            
-                            if (paymentCompleteSaving) {
-                                paymentCompleteSaving.innerHTML = `최대 ${savedAmountText}원 아꼈어요!`;
-                                paymentCompleteSaving.style.display = 'none'; // 초기에 숨김
-                                paymentCompleteSaving.style.marginTop = '100px';
-                                paymentCompleteSaving.style.fontSize = '16px';
-                                paymentCompleteSaving.style.fontWeight = '600';
-                                paymentCompleteSaving.style.color = '#1d74ff';
+            // 다른 카드 숨기기
+            document.querySelectorAll('.card:not(.selected)').forEach(card => {
+                card.classList.remove('visible');
+                card.classList.add('hidden-above');
+            });
+
+            // 선택된 카드 중앙 정렬 및 크기 조절
+            cardElement.style.transform = 'translateY(-50%) scale(1.05)';
+            cardElement.style.top = '40%';
+            cardElement.style.zIndex = '100';
+            cardElement.classList.add('final-focus');
+
+            // 주문 완료 요소 표시 (첫 번째 녹색 체크마크)
+            orderCompleteElement.style.display = 'flex'; // flex로 변경
+            orderCompleteElement.classList.remove('hidden');
+            orderCompleteElement.classList.add('show');
+
+            const checkMark = orderCompleteElement.querySelector('.final-checkmark');
+            if (checkMark) {
+                // 애니메이션 클래스 추가 전에 리셋 (재실행 위해)
+                checkMark.classList.remove('animate');
+                void checkMark.offsetWidth; // Reflow
+                checkMark.classList.add('animate');
+
+                // 첫 번째 체크마크 애니메이션 완료 리스너
+                checkMark.addEventListener('animationend', function firstCheckAnimationEndHandler() {
+                    checkMark.removeEventListener('animationend', firstCheckAnimationEndHandler);
+
+                    // 주문 완료 숨기기
+                    orderCompleteElement.classList.remove('show');
+                    orderCompleteElement.classList.add('hidden');
+
+                    // 결제 완료 표시 (두 번째 파란 체크마크)
+                    paymentCompleteElement.style.display = 'flex'; // flex로 변경
+                    paymentCompleteElement.classList.remove('hidden');
+                    paymentCompleteElement.classList.add('show');
+
+                    const blueCheckMark = paymentCompleteElement.querySelector('.final-checkmark.blue');
+                    if (blueCheckMark) {
+                        // 애니메이션 클래스 추가 전에 리셋
+                        blueCheckMark.classList.remove('animate');
+                        void blueCheckMark.offsetWidth; // Reflow
+                        blueCheckMark.classList.add('animate');
+
+                        // 두 번째(파란색) 체크마크 애니메이션 완료 리스너 *** 여기에 메시지 업데이트 로직 추가 ***
+                        blueCheckMark.addEventListener('animationend', function blueCheckAnimationEndHandler() {
+                            blueCheckMark.removeEventListener('animationend', blueCheckAnimationEndHandler);
+
+                            // 카이토 설명 영역 업데이트
+                            if (kaitoIntroElement) {
+                                // 페이드 아웃 후 텍스트 변경 및 페이드 인
+                                kaitoIntroElement.style.transition = 'opacity 0.3s ease-out';
+                                kaitoIntroElement.style.opacity = '0';
+                                
+                                setTimeout(() => {
+                                    kaitoIntroElement.classList.add('completed'); // 완료 스타일 적용
+                                    const introSpan = kaitoIntroElement.querySelector('span');
+                                    
+                                    // 해당 거래소의 절약 금액 직접 가져오기
+                                    const exchangeName = cardElement.dataset.exchangeName;
+                                    const exchange = coinData[currentCoin].exchanges.find(ex => ex.name === exchangeName);
+                                    
+                                    if (introSpan) {
+                                        // 조건 체크 없이 항상 최대 금액 표시
+                                        const savedAmount = exchange ? exchange.savingsAmount : savingsAmount;
+                                        introSpan.textContent = `최대 ${formatAmount(savedAmount)}원 아꼈어요!`;
+                                        console.log(`[수정됨] kaito-intro 업데이트: 최대 ${formatAmount(savedAmount)}원 아꼈어요!`);
+                                    }
+                                    
+                                    // 페이드 인
+                                    kaitoIntroElement.style.transition = 'opacity 0.4s ease-in';
+                                    kaitoIntroElement.style.opacity = '1';
+                                }, 300);
                             } else {
-                                // 저장 금액 요소가 없는 경우 생성
-                                const savingElement = document.createElement('div');
-                                savingElement.className = 'payment-complete-saving';
-                                savingElement.innerHTML = `최대 ${savedAmountText}원 아꼈어요!`;
-                                savingElement.style.display = 'none'; // 초기에 숨김
-                                savingElement.style.marginTop = '100px';
-                                savingElement.style.fontSize = '16px';
-                                savingElement.style.fontWeight = '600';
-                                savingElement.style.color = '#1d74ff';
-                                
-                                const titleElement = paymentComplete.querySelector('.payment-complete-title');
-                                if (titleElement && titleElement.parentNode) {
-                                    titleElement.parentNode.insertBefore(savingElement, titleElement.nextSibling);
-                                } else {
-                                    paymentComplete.appendChild(savingElement);
-                                }
+                                 console.error('kaitoIntroElement를 찾을 수 없습니다.');
                             }
-                            
-                            // 결제 완료 화면 표시
-                            paymentComplete.style.display = 'flex';
-                            paymentComplete.style.flexDirection = 'column';
-                            paymentComplete.style.justifyContent = 'flex-start';
-                            paymentComplete.style.paddingTop = '60px';
-                            
-                            // 요소가 DOM에 반영될 수 있도록 약간의 지연 후 애니메이션 시작
-                            setTimeout(() => {
-                                // 애니메이션 다시 적용
-                                if (finalCheckMark) {
-                                    finalCheckMark.style.animation = 'stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards';
-                                }
-                                
-                                if (finalCircle) {
-                                    finalCircle.style.animation = 'stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards';
-                                }
-                                
-                                paymentComplete.classList.add('show');
-                                paymentComplete.style.opacity = '1';
-                                console.log("결제 완료 화면 표시됨");
-                                
-                                // 결제 완료 체크마크에도 이벤트 리스너 추가
-                                if (finalCheckMark) {
-                                    finalCheckMark.addEventListener('animationend', () => {
-                                        console.log("최종 체크마크 애니메이션 완료");
-                                        
-                                        // 체크마크 애니메이션 완료 후 저장 금액 텍스트 표시
-                                        const savingText = paymentComplete.querySelector('.payment-complete-saving');
-                                        if (savingText) {
-                                            setTimeout(() => {
-                                                savingText.style.display = 'block';
-                                                savingText.style.animation = 'fadeInPop 0.5s ease-out forwards';
-                                            }, 300); // 약간의 지연 후 표시
-                                        }
-                                    }, { once: true });
-                                }
-                            }, 30); // 50ms에서 30ms로 단축
-                        }, 200); // 300ms에서 200ms로 단축
-                    });
-                } else {
-                    // 체크마크 요소를 찾지 못한 경우 타이머로 대체
-                    console.error("체크마크 요소를 찾을 수 없음. 타이머로 대체");
-                    // 주문 완료 화면 페이드 아웃
-                    orderComplete.style.opacity = '0';
-                    
-                    setTimeout(() => {
-                        orderComplete.style.display = 'none';
-                        orderComplete.classList.remove('show');
-                        
-                        // 결제 완료 화면 표시
-                        paymentComplete.style.display = 'flex';
-                        paymentComplete.style.flexDirection = 'column';
-                        paymentComplete.style.justifyContent = 'flex-start';
-                        paymentComplete.style.paddingTop = '60px';
-                        
-                        // 결제 완료 메시지 업데이트
-                        const paymentCompleteTitle = paymentComplete.querySelector('.payment-complete-title');
-                        if (paymentCompleteTitle) {
-                            paymentCompleteTitle.innerHTML = '주문이 완료되었어요';
-                        }
-                        
-                        // 추가 텍스트 업데이트/생성
-                        const paymentCompleteSaving = paymentComplete.querySelector('.payment-complete-saving');
-                        if (paymentCompleteSaving) {
-                            paymentCompleteSaving.innerHTML = `최대 ${savedAmountText}원 아꼈어요!`;
-                            paymentCompleteSaving.style.display = 'none'; // 초기에 숨김
-                            paymentCompleteSaving.style.marginTop = '100px';
-                        } else {
-                            const savingElement = document.createElement('div');
-                            savingElement.className = 'payment-complete-saving';
-                            savingElement.innerHTML = `최대 ${savedAmountText}원 아꼈어요!`;
-                            savingElement.style.display = 'none'; // 초기에 숨김
-                            savingElement.style.marginTop = '100px';
-                            savingElement.style.fontSize = '16px';
-                            savingElement.style.fontWeight = '600';
-                            savingElement.style.color = '#1d74ff';
-                            
-                            const titleElement = paymentComplete.querySelector('.payment-complete-title');
-                            if (titleElement && titleElement.parentNode) {
-                                titleElement.parentNode.insertBefore(savingElement, titleElement.nextSibling);
-                            } else {
-                                paymentComplete.appendChild(savingElement);
-                            }
-                        }
-                        
-                        setTimeout(() => {
-                            paymentComplete.classList.add('show');
-                            paymentComplete.style.opacity = '1';
-                            
-                            // 체크마크 애니메이션이 없는 경우에도 저장 금액 텍스트 표시
-                            setTimeout(() => {
-                                const savingText = paymentComplete.querySelector('.payment-complete-saving');
-                                if (savingText) {
-                                    savingText.style.display = 'block';
-                                    savingText.style.animation = 'fadeInPop 0.5s ease-out forwards';
-                                }
-                            }, 800); // 체크마크 애니메이션 시간을 고려한 지연
-                        }, 30); // 50ms에서 30ms로 단축
-                    }, 200); // 300ms에서 200ms로 단축
-                }
-            }, 50); // 100ms에서 50ms로 단축
-        }, 100); // 200ms에서 100ms로 단축
+
+                            // 여기서 최종 상태 처리, 다음 화면 전환 등 추가 로직 구현 가능
+                            // 예: 3초 후 다음 화면으로 이동
+                            // setTimeout(() => {
+                            //     goToScreen(2); // 다음 화면으로 이동 (가정)
+                            // }, 3000);
+                        });
+                    } else {
+                        console.error('blueCheckMark 요소를 찾을 수 없습니다.');
+                    }
+                });
+            } else {
+                console.error('checkMark 요소를 찾을 수 없습니다.');
+            }
+        }, delay);
     }
 
     function selectCheapestCard() {
@@ -1090,6 +993,23 @@ document.addEventListener('DOMContentLoaded', () => {
                      
                      // 가격 애니메이션 제거 - 초기 생성 시에는 애니메이션 적용하지 않음
                  }, 50);
+                 
+                 // 카드 초기 위치 설정 (가격 변동 후 위치와 동일하게 설정)
+                 const newTop = index === 0 ? 0 : 
+                             index === 1 ? (176 + 16) : 
+                             index === 2 ? (176 + 16 + 120 + 16) : 
+                             (176 + 16 + (120 + 16) * 2);
+                 
+                 // 위치 및 높이 설정
+                 cardElement.style.position = 'absolute';
+                 cardElement.style.top = `${newTop}px`;
+                 
+                 // 높이 설정 (첫 번째 카드는 큰 사이즈, 나머지는 작은 사이즈)
+                 if (index === 0) {
+                     cardElement.style.height = '176px';
+                 } else {
+                     cardElement.style.height = '120px';
+                 }
              });
              
              // 스타일 요소는 계속 유지 (제거하지 않음)
@@ -1560,13 +1480,95 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 최신 절약 금액 가져오기 (데이터에서 직접 가져옴)
                     const exchangeName = cardElement.dataset.exchangeName;
                     const exchange = coinData[currentCoin].exchanges.find(ex => ex.name === exchangeName);
-                    const savedAmount = exchange ? formatAmount(exchange.savingsAmount) : 
-                                     cardElement.querySelector('.amount-value')?.textContent || '0';
+                    const savedAmount = exchange ? exchange.savingsAmount : 
+                                     parseInt(cardElement.querySelector('.amount-value')?.textContent.replace(/[^0-9]/g, '') || '0', 10);
                     
-                    introTextSpan.textContent = `주문 완료! ${savedAmount}원 아꼈어요`;
+                    // 항상 아낀 금액 표시
+                    introTextSpan.textContent = `최대 ${formatAmount(savedAmount)}원 아꼈어요!`;
                     kaitoIntro.style.transition = 'opacity 0.3s ease-in'; // 0.2s에서 원래값 0.3s로 복원
                     kaitoIntro.style.opacity = '1';
+                    
+                    console.log(`[handleFinalStep 수정] kaito-intro 업데이트: 최대 ${formatAmount(savedAmount)}원 아꼈어요!`);
                 }, 300); // 200ms에서 원래값 300ms로 복원
+            }
+        }
+    }
+
+    // 사전예약 버튼 클릭 이벤트 추가
+    const preSignupBtn = document.querySelector('.pre-signup-btn');
+    if (preSignupBtn) {
+        preSignupBtn.addEventListener('click', function() {
+            // 간단한 모달 창 생성
+            const modal = document.createElement('div');
+            modal.className = 'signup-modal';
+            
+            const modalContent = document.createElement('div');
+            modalContent.className = 'modal-content';
+            
+            const closeBtn = document.createElement('span');
+            closeBtn.className = 'close-btn';
+            closeBtn.innerHTML = '&times;';
+            closeBtn.onclick = function() {
+                document.body.removeChild(modal);
+            };
+            
+            const title = document.createElement('h3');
+            title.textContent = '코인 최저가 구매, 카이토가 도와드릴게요!';
+            
+            const inputEmail = document.createElement('input');
+            inputEmail.type = 'text';
+            inputEmail.placeholder = '이메일 또는 휴대폰 번호';
+            
+            const submitBtn = document.createElement('button');
+            submitBtn.textContent = '알림 받기';
+            submitBtn.onclick = function() {
+                if (inputEmail.value.trim() === '') {
+                    alert('이메일 또는 휴대폰 번호를 입력해주세요!');
+                    return;
+                }
+                
+                // 폼 제출 시 감사 메시지 표시
+                modalContent.innerHTML = '';
+                
+                const thankTitle = document.createElement('h3');
+                thankTitle.textContent = '사전예약이 완료되었어요!';
+                
+                const thankMessage = document.createElement('p');
+                thankMessage.textContent = '카이토가 출시되면 가장 먼저 알려드릴게요. 25% 할인된 가격으로 코인을 구매하실 수 있어요!';
+                
+                const closeThankBtn = document.createElement('button');
+                closeThankBtn.textContent = '확인';
+                closeThankBtn.onclick = function() {
+                    document.body.removeChild(modal);
+                };
+                
+                modalContent.appendChild(thankTitle);
+                modalContent.appendChild(thankMessage);
+                modalContent.appendChild(closeThankBtn);
+                
+                console.log('사전예약 신청:', inputEmail.value);
+            };
+            
+            modalContent.appendChild(closeBtn);
+            modalContent.appendChild(title);
+            modalContent.appendChild(inputEmail);
+            modalContent.appendChild(submitBtn);
+            
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+        });
+    }
+
+    function markStepComplete(stepElement) {
+        if (stepElement) {
+            stepElement.classList.add('completed');
+            
+            // 주문 완료 시 텍스트 변경
+            if (stepElement.classList.contains('step1-intro')) {
+                const textSpan = stepElement.querySelector('span');
+                if (textSpan) {
+                    textSpan.textContent = "주문이 완료됐어요";
+                }
             }
         }
     }
