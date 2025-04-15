@@ -325,39 +325,81 @@ document.addEventListener('DOMContentLoaded', () => {
     // const transitionDuration = 1400; // ms, JS 타임아웃 지연 시간 - updateCards에서만 사용됨
     // let cardUpdateCycleStarted = false; // Flag removed
 
+    // 수량 포맷팅 함수 추가
+    function formatQuantity(price) {
+        // 100만원으로 구매 가능한 코인 수량 계산
+        // 실제 가격이 1,078.93원이라고 가정할 때의 비율로 계산
+        const basePrice = 1078.93;
+        const baseAmount = 1000000; // 100만원
+        
+        // 거래소 가격이 낮을수록 더 많은 코인을 구매할 수 있음
+        const quantity = baseAmount / price;
+        
+        // 소수점 둘째 자리까지 표시하고 천 단위 쉼표 포맷팅
+        return quantity.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    // 기존 formatAmount 함수 유지
     function formatAmount(amount) {
-        return amount.toLocaleString('ko-KR');
+        return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
 
     // 숫자 롤링 애니메이션 함수
     function animateCountUp(element, endValue, duration = 1400, isPercentage = false) {
-        // Check if element exists
         if (!element) return;
-
-        let startValueText = element.textContent.replace(/[^0-9.]/g, '');
-        let startValue = isPercentage ? parseFloat(startValueText) : parseInt(startValueText, 10);
-        if (isNaN(startValue)) startValue = 0;
-
-        let startTime = null;
-
+        
+        // 입력값이 숫자형이 아니면 변환 시도
+        if (typeof endValue !== 'number') {
+            endValue = parseFloat(endValue.toString().replace(/[^\d.-]/g, ''));
+        }
+        
+        // 변환에 실패하면 처리 중단
+        if (isNaN(endValue)) {
+            console.error('animateCountUp received invalid endValue:', endValue);
+            return;
+        }
+        
+        // 시작 값도 숫자로 변환 시도
+        let startValue = 0;
+        if (element.textContent) {
+            startValue = parseFloat(element.textContent.replace(/[^\d.-]/g, '')) || 0;
+        }
+        
+        // 변화가 없으면 애니메이션 스킵
+        if (startValue === endValue) {
+            return;
+        }
+        
+        const startTime = performance.now();
+        
         function step(timestamp) {
-            if (!startTime) startTime = timestamp;
-            const progress = Math.min((timestamp - startTime) / duration, 1);
-            let currentValue;
-            if (isPercentage) {
-                // Handle floating point for percentage
-                currentValue = (progress * (endValue - startValue) + startValue);
-                 // Format to 1 decimal place if needed, or keep integer if possible
-                element.textContent = Number.isInteger(currentValue) ? currentValue : currentValue.toFixed(1);
-            } else {
-                currentValue = Math.floor(progress * (endValue - startValue) + startValue);
-                element.textContent = formatAmount(currentValue);
+            // 진행 시간 계산
+            const elapsed = timestamp - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // easeOutExpo 애니메이션 곡선 적용 - 급격히 시작하여 부드럽게 종료
+            const easedProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+            
+            // 현재 값 계산
+            const currentValue = startValue + (endValue - startValue) * easedProgress;
+            
+            // 요소가 price-info 클래스를 가진 경우 수량으로 표시
+            if (element.classList.contains('price-info')) {
+                element.textContent = `${formatQuantity(currentValue)}개`;
+            } 
+            // 일반적인 경우 (절약 금액 등)
+            else {
+                element.textContent = isPercentage ? 
+                    `${currentValue.toFixed(1)}%` : 
+                    formatAmount(Math.round(currentValue));
             }
-
+            
+            // 애니메이션 완료 여부 확인
             if (progress < 1) {
                 requestAnimationFrame(step);
             }
         }
+        
         requestAnimationFrame(step);
     }
 
@@ -374,6 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.dataset.exchangeName = exchange.name;
         // price 데이터 속성 추가
         card.dataset.price = exchange.price;
+        card.dataset.coinSymbol = coinSymbol;
         // 카드 높이 직접 설정 코드 제거 - 첫 단계에서는 기본 높이 유지
 
         const exchangeIconInfo = routeIconMap[exchange.iconClass] || { class: exchange.iconClass, label: exchange.label };
@@ -399,61 +442,35 @@ document.addEventListener('DOMContentLoaded', () => {
         const isFirstCard = cardId === 'card1';
         const lowestPriceLabel = isFirstCard ? '<span class="lowest-price-label" style="background-color:#1d74ff; color:white; font-size:12px; padding:4px 8px; border-radius:6px; margin-left: 10px; opacity: 0.9; transition: opacity 1.2s ease;">최저가</span>' : '';
         
-        // 카드별 레이아웃 차이점
-        if (isFirstCard) {
-            // 첫 번째 카드 - 좌측 정렬로 통일된 레이아웃
-            card.innerHTML = `
-                <div class="card-layout" style="display:flex; flex-direction:column; height:100%;">
-                    <!-- 헤더 영역 -->
-                    <div class="card-header" style="flex-shrink:0; margin-bottom:0;">
-                        <div class="exchange-info"> 
-                             <div class="exchange-icon ${exchangeIconInfo.class}">${exchangeLogoContent}</div>
-                             <div class="exchange-name">${exchange.name}${lowestPriceLabel}</div>
-                        </div>
-                         <div class="route-icons static-route-icons">
-                             ${staticRouteIconsHTML}
-                         </div>
+        // 100만원 기준 구매 가능 수량 계산
+        const quantity = formatQuantity(exchange.price);
+        
+        // 동일한 레이아웃 사용하되, 첫 번째 카드만 아낀 금액 표시
+        card.innerHTML = `
+            <div class="card-layout" style="display:flex; flex-direction:column; height:100%;">
+                <!-- 헤더 영역 -->
+                <div class="card-header" style="flex-shrink:0; margin-bottom:0;">
+                    <div class="exchange-info"> 
+                         <div class="exchange-icon ${exchangeIconInfo.class}">${exchangeLogoContent}</div>
+                         <div class="exchange-name">${exchange.name}${lowestPriceLabel}</div>
                     </div>
-                    
-                    <!-- 가격 정보 영역 - 좌측 정렬로 통일, 여백 더 줄임 -->
-                    <div class="price-section" style="margin-top:5px; text-align:left; flex-shrink:0; margin-bottom:0;">
-                        <div class="price-info" style="font-size:20px; font-weight:bold;">${formatAmount(exchange.price)}원</div>
-                        <div class="amount-saved" style="font-size:14px; color:#666; margin-top:35px; visibility:visible;">최대 <span class="amount-value">${formatAmount(exchange.savingsAmount)}</span>원 절약해요</div>
-                    </div>
-                    
-                    <!-- 경로 정보 영역 - 스크롤 없이 표시, 음수 마진으로 위로 당김 -->
-                    <div class="route-section" style="flex-grow:0; position:relative; margin-top:-25px;">
-                        <div class="animated-route" style="padding-top:0;"></div>
-                    </div>
+                     <div class="route-icons static-route-icons">
+                         ${staticRouteIconsHTML}
+                     </div>
                 </div>
-            `;
-        } else {
-            // 2~4번째 카드 - 간소화된 레이아웃
-            card.innerHTML = `
-                <div class="card-layout" style="display:flex; flex-direction:column; height:100%;">
-                    <!-- 헤더 영역 -->
-                    <div class="card-header" style="flex-shrink:0; margin-bottom:0;">
-                        <div class="exchange-info"> 
-                             <div class="exchange-icon ${exchangeIconInfo.class}">${exchangeLogoContent}</div>
-                             <div class="exchange-name">${exchange.name}</div>
-                        </div>
-                         <div class="route-icons static-route-icons">
-                             ${staticRouteIconsHTML}
-                         </div>
-                    </div>
-                    
-                    <!-- 간소화된 가격 정보 영역 -->
-                    <div class="price-section" style="margin-top:10px; text-align:left;">
-                        <div class="price-info" style="font-size:20px; font-weight:bold;">${formatAmount(exchange.price)}원</div>
-                    </div>
-                    
-                    <!-- 경로 정보 영역 (애니메이션용) -->
-                    <div class="route-section" style="display:none;">
-                        <div class="animated-route"></div>
-                    </div>
+                
+                <!-- 가격 정보 영역 -->
+                <div class="price-section" style="margin-top:${isFirstCard ? '5' : '10'}px; text-align:left; flex-shrink:0; margin-bottom:0;">
+                    <div class="price-info" style="font-size:20px; font-weight:bold;">${quantity}개</div>
+                    ${isFirstCard ? `<div class="amount-saved" style="font-size:14px; color:#666; margin-top:35px; visibility:visible;">최대 <span class="amount-value">${formatAmount(exchange.savingsAmount)}</span>원 절약해요</div>` : ''}
                 </div>
-            `;
-        }
+                
+                <!-- 경로 정보 영역 - 스크롤 없이 표시, 음수 마진으로 위로 당김 -->
+                <div class="route-section" style="flex-grow:0; position:relative; margin-top:-25px; ${!isFirstCard ? 'display:none;' : ''}">
+                    <div class="animated-route" style="padding-top:0;"></div>
+                </div>
+            </div>
+        `;
 
         requestAnimationFrame(() => {
             const amountElement = card.querySelector('.amount-value');
@@ -765,12 +782,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentCoinSymbol = cardElement.dataset.coinSymbol || 'BTC'; // 기본값 BTC 또는 현재 코인 심볼
         const currentCoinPrice = coinData[currentCoinSymbol] ? coinData[currentCoinSymbol].price : 0;
         const savingsAmount = currentCoinPrice - selectedExchangePrice;
+        
+        // 100만원 기준 구매 수량 계산
+        const purchasedQuantity = formatQuantity(selectedExchangePrice);
 
         // 결제 완료 텍스트 설정
         const completeTextElement = paymentCompleteElement.querySelector('.complete-text');
+        
         if (completeTextElement) {
-            const amountText = formatAmount(selectedExchangePrice);
-            completeTextElement.innerHTML = `${amountText}원에 결제 완료되었어요!`;
+            completeTextElement.innerHTML = `${purchasedQuantity}개 구매 완료되었어요!`;
         }
 
         // 지정된 지연 후 애니메이션 시작
@@ -794,76 +814,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const checkMark = orderCompleteElement.querySelector('.final-checkmark');
             if (checkMark) {
-                // 애니메이션 클래스 추가 전에 리셋 (재실행 위해)
-                checkMark.classList.remove('animate');
-                void checkMark.offsetWidth; // Reflow
-                checkMark.classList.add('animate');
-
-                // 첫 번째 체크마크 애니메이션 완료 리스너
+                checkMark.style.opacity = '1';
+                checkMark.style.animation = 'fadeInPop 0.6s cubic-bezier(0.18, 0.89, 0.32, 1.28)';
+                
+                // 첫 번째 체크마크 애니메이션 완료 후 텍스트 및 두 번째 체크마크 표시
                 checkMark.addEventListener('animationend', function firstCheckAnimationEndHandler() {
+                    // 핸들러 제거 (한 번만 실행되도록)
                     checkMark.removeEventListener('animationend', firstCheckAnimationEndHandler);
-
-                    // 주문 완료 숨기기
-                    orderCompleteElement.classList.remove('show');
-                    orderCompleteElement.classList.add('hidden');
-
-                    // 결제 완료 표시 (두 번째 파란 체크마크)
-                    paymentCompleteElement.style.display = 'flex'; // flex로 변경
-                    paymentCompleteElement.classList.remove('hidden');
-                    paymentCompleteElement.classList.add('show');
-
-                    const blueCheckMark = paymentCompleteElement.querySelector('.final-checkmark.blue');
-                    if (blueCheckMark) {
-                        // 애니메이션 클래스 추가 전에 리셋
-                        blueCheckMark.classList.remove('animate');
-                        void blueCheckMark.offsetWidth; // Reflow
-                        blueCheckMark.classList.add('animate');
-
-                        // 두 번째(파란색) 체크마크 애니메이션 완료 리스너 *** 여기에 메시지 업데이트 로직 추가 ***
-                        blueCheckMark.addEventListener('animationend', function blueCheckAnimationEndHandler() {
-                            blueCheckMark.removeEventListener('animationend', blueCheckAnimationEndHandler);
-
-                            // 카이토 설명 영역 업데이트
-                            if (kaitoIntroElement) {
-                                // 페이드 아웃 후 텍스트 변경 및 페이드 인
-                                kaitoIntroElement.style.transition = 'opacity 0.3s ease-out';
-                                kaitoIntroElement.style.opacity = '0';
-                                
-                                setTimeout(() => {
-                                    kaitoIntroElement.classList.add('completed'); // 완료 스타일 적용
-                                    const introSpan = kaitoIntroElement.querySelector('span');
-                                    
-                                    // 해당 거래소의 절약 금액 직접 가져오기
-                                    const exchangeName = cardElement.dataset.exchangeName;
-                                    const exchange = coinData[currentCoin].exchanges.find(ex => ex.name === exchangeName);
-                                    
-                                    if (introSpan) {
-                                        // 조건 체크 없이 항상 최대 금액 표시
-                                        const savedAmount = exchange ? exchange.savingsAmount : savingsAmount;
-                                        introSpan.textContent = `최대 ${formatAmount(savedAmount)}원 아꼈어요!`;
-                                        console.log(`[수정됨] kaito-intro 업데이트: 최대 ${formatAmount(savedAmount)}원 아꼈어요!`);
-                                    }
-                                    
-                                    // 페이드 인
-                                    kaitoIntroElement.style.transition = 'opacity 0.4s ease-in';
-                                    kaitoIntroElement.style.opacity = '1';
-                                }, 300);
-                            } else {
-                                 console.error('kaitoIntroElement를 찾을 수 없습니다.');
-                            }
-
-                            // 여기서 최종 상태 처리, 다음 화면 전환 등 추가 로직 구현 가능
-                            // 예: 3초 후 다음 화면으로 이동
-                            // setTimeout(() => {
-                            //     goToScreen(2); // 다음 화면으로 이동 (가정)
-                            // }, 3000);
-                        });
-                    } else {
-                        console.error('blueCheckMark 요소를 찾을 수 없습니다.');
+                    
+                    // 주문 완료 텍스트 표시
+                    const orderTextElement = orderCompleteElement.querySelector('.order-text');
+                    if (orderTextElement) {
+                        orderTextElement.style.opacity = '1';
+                        orderTextElement.textContent = '주문 완료!';
                     }
+                    
+                    // 결제 완료 요소도 표시 (두 번째 파란색 체크마크)
+                    setTimeout(() => {
+                        paymentCompleteElement.style.display = 'flex';
+                        paymentCompleteElement.classList.remove('hidden');
+                        paymentCompleteElement.classList.add('show');
+                        
+                        const blueCheckMark = paymentCompleteElement.querySelector('.final-checkmark-blue');
+                        if (blueCheckMark) {
+                            blueCheckMark.style.opacity = '1';
+                            blueCheckMark.style.animation = 'fadeInPop 0.6s cubic-bezier(0.18, 0.89, 0.32, 1.28)';
+                            
+                            // 두 번째 체크마크 애니메이션 완료 후 결제 완료 텍스트 표시
+                            blueCheckMark.addEventListener('animationend', function blueCheckAnimationEndHandler() {
+                                // 핸들러 제거 (한 번만 실행되도록)
+                                blueCheckMark.removeEventListener('animationend', blueCheckAnimationEndHandler);
+                                
+                                // 결제 완료 텍스트 표시
+                                if (completeTextElement) {
+                                    completeTextElement.style.opacity = '1';
+                                }
+                                
+                                // 처리 완료 후 카드 강조 표시
+                                cardElement.style.transition = 'all 0.4s ease-out';
+                                cardElement.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.12)';
+                                
+                                // 최종 스텝으로 이동
+                                handleFinalStep();
+                            });
+                        }
+                    }, 600); // 600ms 후 결제 완료 요소 표시
                 });
-            } else {
-                console.error('checkMark 요소를 찾을 수 없습니다.');
             }
         }, delay);
     }
@@ -1065,8 +1061,9 @@ document.addEventListener('DOMContentLoaded', () => {
             .card {
                 transition: opacity 0.8s ease,
                             transform 0.6s ease-out,
-                            top 0.8s cubic-bezier(0.33, 1, 0.68, 1);
-                will-change: top;
+                            top 0.8s cubic-bezier(0.33, 1, 0.68, 1),
+                            height 0.8s cubic-bezier(0.33, 1, 0.68, 1);
+                will-change: top, height;
                 width: calc(100% - 32px) !important;
                 margin-left: 16px !important;
                 margin-right: 16px !important;
@@ -1140,9 +1137,14 @@ document.addEventListener('DOMContentLoaded', () => {
          
          // 1. 현재 카드 정보 저장
          const cardInfo = Array.from(existingCards).map(card => {
-             // 현재 가격 정보도 저장
+             // 현재 수량 정보 저장 (텍스트에서 숫자만 추출)
              const priceInfo = card.querySelector('.price-info');
-             const currentPrice = priceInfo ? parseInt(priceInfo.textContent.replace(/[^0-9]/g, ''), 10) : 0;
+             let currentQuantity = 0;
+             if (priceInfo) {
+                 const quantityText = priceInfo.textContent;
+                 // "926.84개" 형식에서 숫자 부분만 추출
+                 currentQuantity = parseFloat(quantityText.replace(/[^0-9.]/g, '')) || 0;
+             }
              
              return {
                  element: card,
@@ -1150,7 +1152,8 @@ document.addEventListener('DOMContentLoaded', () => {
                  currentTop: card.offsetTop,
                  currentPosition: parseInt(card.style.top || '0', 10),
                  price: parseFloat(card.dataset.price || '0'),
-                 displayPrice: currentPrice // 현재 표시된 가격 저장
+                 displayQuantity: currentQuantity, // 현재 표시된 수량 저장
+                 id: card.id
              };
          });
          
@@ -1165,50 +1168,88 @@ document.addEventListener('DOMContentLoaded', () => {
                  // 카드 데이터 업데이트
                  card.dataset.price = exchange.price;
                  
-                 // 가격 정보 업데이트 - 애니메이션 추가
-                 const priceInfo = card.querySelector('.price-info');
-                 if (priceInfo) {
-                     // 이전 가격에서 새 가격으로 애니메이션
-                     const oldPrice = cardMatch.displayPrice;
-                     const newPrice = exchange.price;
-                     
-                     console.log(`카드 ${card.id} 가격 변경: ${formatAmount(oldPrice)} -> ${formatAmount(newPrice)}`);
-                     
-                     // 가격이 변경된 경우에만 애니메이션 적용
-                     if (oldPrice !== newPrice) {
-                         animateCountUp(priceInfo, newPrice, 1000);
-                     } else {
-                         // 변경이 없으면 그냥 텍스트 설정
-                         priceInfo.textContent = `${formatAmount(newPrice)}원`;
+                 // 최저가 레이블 처리 (첫 번째 카드에만 표시)
+                 const isNowFirstCard = index === 0;
+                 const lowestPriceLabel = card.querySelector('.lowest-price-label');
+                 
+                 // 최저가 레이블 업데이트
+                 if (lowestPriceLabel) {
+                     // 레이블이 있는 경우 표시 여부 업데이트
+                     lowestPriceLabel.style.display = isNowFirstCard ? 'inline-block' : 'none';
+                 } else if (isNowFirstCard) {
+                     // 레이블이 없고 첫 번째 카드인 경우 레이블 추가
+                     const exchangeNameElement = card.querySelector('.exchange-name');
+                     if (exchangeNameElement && !exchangeNameElement.querySelector('.lowest-price-label')) {
+                         const newLabel = document.createElement('span');
+                         newLabel.className = 'lowest-price-label';
+                         newLabel.style.cssText = 'background-color:#1d74ff; color:white; font-size:12px; padding:4px 8px; border-radius:6px; margin-left: 10px; opacity: 0.9; transition: opacity 1.2s ease;';
+                         newLabel.textContent = '최저가';
+                         exchangeNameElement.appendChild(newLabel);
                      }
                  }
                  
-                 // 아낀 금액 업데이트 - 가격 변동과 동일한 애니메이션 적용
+                 // 아낀 금액 섹션 표시 여부 처리
                  const amountSavedElement = card.querySelector('.amount-saved');
                  if (amountSavedElement) {
-                     // amount-saved 요소가 숨겨진 경우 다시 표시
-                     if (amountSavedElement.style.visibility === 'hidden') {
+                     // 첫 번째 카드인 경우만 표시, 그 외에는 숨김
+                     if (isNowFirstCard) {
                          amountSavedElement.style.visibility = 'visible';
+                         amountSavedElement.style.display = 'block'; 
                          amountSavedElement.style.opacity = '1';
-                     }
-                     
-                     const amountElement = amountSavedElement.querySelector('.amount-value');
-                     if (amountElement) {
-                         // 현재 표시되는 금액 확인
-                         const currentSavingsText = amountElement.textContent;
-                         const currentSavings = parseInt(currentSavingsText.replace(/[^0-9]/g, ''), 10) || 0;
-                         const newSavings = exchange.savingsAmount;
-                         
-                         console.log(`카드 ${card.id} 절약 금액 변경: ${formatAmount(currentSavings)} -> ${formatAmount(newSavings)}`);
-                         
-                         // 금액이 변경된 경우에만 애니메이션 적용 (0인 경우에도 애니메이션)
-                         if (currentSavings !== newSavings) {
-                             // 가격 애니메이션과 동일한 속도 적용
-                             animateCountUp(amountElement, newSavings, 1000);
-                         } else {
-                             // 변경이 없으면 그냥 텍스트 설정
-                             amountElement.textContent = formatAmount(newSavings);
+
+                         // 첫 번째 카드가 된 경우 금액 업데이트
+                         const amountElement = amountSavedElement.querySelector('.amount-value');
+                         if (amountElement) {
+                             const currentSavingsText = amountElement.textContent;
+                             const currentSavings = parseInt(currentSavingsText.replace(/[^0-9]/g, ''), 10) || 0;
+                             const newSavings = exchange.savingsAmount;
+                             
+                             console.log(`카드 ${card.id} 절약 금액 변경: ${formatAmount(currentSavings)} -> ${formatAmount(newSavings)}`);
+                             
+                             // 금액이 변경된 경우에만 애니메이션 적용
+                             if (currentSavings !== newSavings) {
+                                 animateCountUp(amountElement, newSavings, 1000);
+                             } else {
+                                 // 변경이 없으면 그냥 텍스트 설정
+                                 amountElement.textContent = formatAmount(newSavings);
+                             }
                          }
+                     } else {
+                         amountSavedElement.style.visibility = 'hidden';
+                         amountSavedElement.style.display = 'none';
+                         amountSavedElement.style.opacity = '0';
+                     }
+                 } else if (isNowFirstCard) {
+                     // 첫 번째 카드인데 아낀 금액 요소가 없는 경우 추가
+                     const priceSection = card.querySelector('.price-section');
+                     if (priceSection && !priceSection.querySelector('.amount-saved')) {
+                         const newAmountSaved = document.createElement('div');
+                         newAmountSaved.className = 'amount-saved';
+                         newAmountSaved.style.cssText = 'font-size:14px; color:#666; margin-top:35px; visibility:visible;';
+                         newAmountSaved.innerHTML = `최대 <span class="amount-value">${formatAmount(exchange.savingsAmount)}</span>원 절약해요`;
+                         priceSection.appendChild(newAmountSaved);
+                     }
+                 }
+                 
+                 // 수량 정보 업데이트 - 애니메이션 추가
+                 const priceInfo = card.querySelector('.price-info');
+                 if (priceInfo) {
+                     // 100만원 기준 구매 가능 수량 계산
+                     const newPrice = exchange.price;
+                     // 1,000,000 / newPrice = 구매 가능 수량
+                     const newQuantity = 1000000 / newPrice;
+                     
+                     // 이전 수량에서 새 수량으로 애니메이션
+                     const oldQuantity = cardMatch.displayQuantity;
+                     
+                     console.log(`카드 ${card.id} 수량 변경: ${oldQuantity.toFixed(2)} -> ${newQuantity.toFixed(2)}`);
+                     
+                     // 수량이 변경된 경우에만 애니메이션 적용
+                     if (Math.abs(oldQuantity - newQuantity) > 0.01) {
+                         animateCountUp(priceInfo, newPrice, 1000);
+                     } else {
+                         // 변경이 없으면 그냥 텍스트 설정
+                         priceInfo.textContent = `${formatQuantity(newPrice)}개`;
                      }
                  }
                  
@@ -1219,33 +1260,31 @@ document.addEventListener('DOMContentLoaded', () => {
                                (176 + 16 + (120 + 16) * 2);
                  
                  // 움직일 거리만 확인하여 애니메이션 효과 추가
-                 if (cardMatch.currentTop !== newTop) {
+                 if (cardMatch.currentTop !== newTop || 
+                     (index === 0 && card.style.height !== '176px') || 
+                     (index !== 0 && card.style.height !== '120px')) {
+                     
                      console.log(`카드 ${card.id} 위치 변경: top ${cardMatch.currentTop}px -> ${newTop}px`);
                      
                      // 현재 위치를 절대 위치로 설정하여 트랜지션 시작점 설정
                      card.style.position = 'absolute';
                      card.style.top = `${cardMatch.currentTop}px`;
                      
-                     // 높이만 설정하고 너비는 CSS로 제어
-                     if (index === 0) {
-                         card.style.height = '176px';
-                     } else {
-                         card.style.height = '120px';
-                     }
-                     
-                     // 너비와 마진을 CSS에서 !important로 설정하므로 여기서는 설정하지 않음
-                     card.style.zIndex = '5';
-                     
                      // 올라가는 카드는 더 높은 z-index를 가지도록 설정
                      const isMovingUp = cardMatch.currentTop > newTop;
-                     if (isMovingUp) {
-                         card.style.zIndex = '10';
-                     }
+                     card.style.zIndex = isMovingUp ? '10' : '5';
                      
                      // 카드 이동 애니메이션 설정 (약간의 지연 추가)
                      setTimeout(() => {
-                         // top만 트랜지션하고 다른 속성은 트랜지션하지 않음
-                         card.style.transition = `top ${isMovingUp ? '0.7s' : '0.9s'} cubic-bezier(0.33, 1, 0.68, 1)`;
+                         // 높이와 위치 동시에 트랜지션
+                         card.style.transition = `top ${isMovingUp ? '0.7s' : '0.9s'} cubic-bezier(0.33, 1, 0.68, 1), height 0.8s cubic-bezier(0.33, 1, 0.68, 1)`;
+                         
+                         // 높이 조정 (첫 번째 카드는 큰 사이즈, 나머지는 작은 사이즈)
+                         if (index === 0) {
+                             card.style.height = '176px';
+                         } else {
+                             card.style.height = '120px';
+                         }
                          
                          // 새 위치로 이동
                          card.style.top = `${newTop}px`;
@@ -1306,9 +1345,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log("Starting initial update cycle (BNB)");
         currentCoin = 'BNB'; // 시작부터 BNB로 설정
+        
+        // 처음에 바이빗이 3번째로 저렴하도록 가격 설정
+        const initialExchanges = coinData[currentCoin].exchanges;
+        const bybitExchange = initialExchanges.find(ex => ex.name === 'Bybit');
+        const otherExchanges = initialExchanges.filter(ex => ex.name !== 'Bybit');
+        
+        // 초기 설정: 다른 거래소 정렬
+        const sortedOthers = [...otherExchanges].sort((a, b) => a.price - b.price);
+        
+        // 가격 간격 계산
+        const avgPriceOthers = otherExchanges.reduce((sum, ex) => sum + ex.price, 0) / otherExchanges.length;
+        const priceStepOthers = Math.max(1000, Math.floor(avgPriceOthers * 0.01));
+        
+        // 바이빗을 3번째 순위로 만들기 위해 가격 조정
+        // 가장 저렴한 2개 거래소의 가격 + 약간의 가격 차이
+        if (sortedOthers.length >= 2) {
+            bybitExchange.price = sortedOthers[1].price + priceStepOthers;
+            console.log(`Bybit 초기 가격 설정: ${formatAmount(bybitExchange.price)}원 (3번째로 저렴)`);
+        }
+        
         updateCards(currentCoin); // BNB로 업데이트
 
-        // 가격 변동 효과 추가: 3.5초 후에 가격을 변경하고 카드를 다시 정렬
+        // 가격 변동 효과 추가: 1초 후에 가격을 변경하고 카드를 다시 정렬
         setTimeout(() => {
             const currentExchanges = coinData[currentCoin].exchanges;
             const basePrice = coinData[currentCoin].price; // 기준 가격
@@ -1334,7 +1393,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             console.log(`나머지 가격 재설정: 평균가=${formatAmount(avgPriceOthers)}, 간격=${formatAmount(priceStepOthers)}`);
 
-            let minOtherPrice = Infinity; // 나머지 중 가장 낮은 가격 추적
+            let minOtherPrice = Infinity;
 
             // 5. 나머지 거래소들에 목표 순서대로 새 가격 할당
             targetOrderNamesOthers.forEach((exchangeName, index) => {
@@ -1393,17 +1452,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log(` - Bybit 절약 금액 조정: ${formatAmount(bybitExchange.savingsAmount)}원 (다른 거래소 최대값 ${formatAmount(maxOtherSavings)}원보다 10% 증가)`);
             }
 
-            // 가격 변동 후 카드 업데이트 전에 더 긴 딜레이 추가 (2초 더 기다림)
+            // 가격 변동 후 카드 업데이트 - 1초 딜레이
             setTimeout(() => {
                 updateCards(currentCoin);
                 
-                // 가격 변동된 카드가 표시된 후 1.5초 지연 후 자동 선택 시작
+                // 가격 변동된 카드가 표시된 후 4초 지연 후 자동 선택 시작
                 if (selectCardTimeoutId) clearTimeout(selectCardTimeoutId);
                 selectCardTimeoutId = setTimeout(() => {
                     selectCheapestCard();
-                }, 4000); // 가격 변동 후 4초 지연 (1.5초에서 4초로 증가)
-            }, 4000); // 가격 재할당 후 업데이트까지 4초 대기
-        }, 0); // 초기 로딩 후 바로 가격 변경 시작 (1초에서 0초로 변경)
+                }, 2800); // 가격 변동 후 2.8초 지연
+            }, 1800); // 가격 재할당 후 업데이트까지 1초 대기
+        }, 1800); // 초기 로딩 후 1초 후 가격 변경 시작
 
         // 카운트다운 텍스트 숨기기
         if (countdownTextElement) {
