@@ -542,10 +542,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const lineStyle = index < route.length - 1 ? 
                 `<div class="step-line" style="position: absolute; left: 50%; transform: translateX(-50%) scaleY(0); transform-origin: top; width: 2px; height: 24px; background-color: var(--border-color-2); transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);"></div>` : '';
 
-            // 주문 완료 단계에는 절약 정보 추가
-            const savingsInfo = iconKey === 'checkmark' ? 
-                `<div class="savings-info" style="font-size: 13px; color: var(--cta-primary); margin-top: 5px; opacity: 0; transform: translateY(5px); transition: opacity 0.5s ease-out, transform 0.5s ease-out;"></div>` : '';
-
             stepElement.innerHTML = `
                 <div class="step-indicator" style="position: relative;">
                     <div class="step-icon-wrapper ${iconWrapperClass}" style="transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);">${iconContent}</div>
@@ -553,7 +549,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="step-details">
                     <div class="step-title" style="color: var(--text-color-1-w); transition: color 0.4s ease;">${step.title}</div>
-                    ${savingsInfo}
                 </div>
             `;
             routeContainer.appendChild(stepElement);
@@ -737,21 +732,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                             introTextSpan.appendChild(document.createTextNode(' 최적의 경로로 자동으로 구매해요'));
                                         }
                                     }
-                                }
-                                
-                                // 최대 절약 금액 표시
-                                const lastStepElement = stepElements[stepElements.length - 1];
-                                const savingsInfoElement = lastStepElement.querySelector('.savings-info');
-                                if (savingsInfoElement) {
-                                    // 절약 금액 계산 (카드의 데이터 속성에서 가져옴)
-                                    const savedAmount = cardElement.dataset.savedAmount || "27,000원";
-                                    savingsInfoElement.textContent = `최대 ${savedAmount} 절약했어요`;
-                                    
-                                    // 저장 금액 정보 페이드인
-                                    setTimeout(() => {
-                                        savingsInfoElement.style.opacity = '1';
-                                        savingsInfoElement.style.transform = 'translateY(0)';
-                                    }, 400);
                                 }
                             }, 500);
                             
