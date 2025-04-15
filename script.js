@@ -744,7 +744,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const savingsInfoElement = lastStepElement.querySelector('.savings-info');
                                 if (savingsInfoElement) {
                                     // 절약 금액 계산 (카드의 데이터 속성에서 가져옴)
-                                    const savedAmount = cardElement.dataset.savedAmount || "15,000원";
+                                    const savedAmount = cardElement.dataset.savedAmount || "27,000원";
                                     savingsInfoElement.textContent = `최대 ${savedAmount} 절약했어요`;
                                     
                                     // 저장 금액 정보 페이드인
