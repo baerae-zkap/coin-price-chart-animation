@@ -1296,16 +1296,14 @@ body::after {
 }
 
 .step-title {
-    font-size: 15px;
     font-weight: 500;
     color: var(--text-color-3);
     line-height: 1.5;
-    transition: color 0.3s ease, font-weight 0.3s ease; /* 0.2s에서 원래값 0.3s로 복원 */
+    transition: color 0.3s ease;
 }
 /* Active Step Text */
 .route-step.active .step-title {
     color: var(--text-color-1-w);
-    font-weight: bold;
 }
 /* Completed Step Text */
 .route-step.completed .step-title {
