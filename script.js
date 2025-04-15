@@ -493,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
         routeContainer.innerHTML = '';
         const route = JSON.parse(cardElement.dataset.route || '[]');
 
-        // 주문 완료 단계 추가 (새로운 단계 추가)
+        // 주문 완료 단계 추가
         const completeStep = {
             iconClass: 'checkmark',
             key: 'order_complete',
@@ -501,6 +501,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         route.push(completeStep);
 
+        // 각 단계별 요소 생성
         route.forEach((step, index) => {
             const iconKey = step.iconClass || step.key;
 
@@ -510,10 +511,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const stepElement = document.createElement('div');
             stepElement.classList.add('route-step');
             
-            // 처음부터 스타일 적용
+            // 처음부터 스타일 적용 - 개선된 트랜지션
             stepElement.style.opacity = '0.5';
             stepElement.style.transform = 'translateY(10px)';
-            stepElement.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            stepElement.style.transition = 'opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
 
             // Determine icon content based on step type
             let iconContent = '';
@@ -537,22 +538,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 iconWrapperClass = (iconInfo && iconInfo.class) || 'default';
             }
 
+            // 연결선 스타일 정의
+            const lineStyle = index < route.length - 1 ? 
+                `<div class="step-line" style="position: absolute; left: 50%; transform: translateX(-50%) scaleY(0); transform-origin: top; width: 2px; height: 24px; background-color: var(--border-color-2); transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);"></div>` : '';
+
             stepElement.innerHTML = `
-                <div class="step-indicator">
-                     <div class="step-icon-wrapper ${iconWrapperClass}">${iconContent}</div>
-                     ${index < route.length - 1 ? '<div class="step-line"></div>' : ''}
+                <div class="step-indicator" style="position: relative;">
+                    <div class="step-icon-wrapper ${iconWrapperClass}" style="transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);">${iconContent}</div>
+                    ${lineStyle}
                 </div>
                 <div class="step-details">
-                    <div class="step-title" style="color: var(--text-color-1-w);">${step.title}</div>
+                    <div class="step-title" style="color: var(--text-color-1-w); transition: color 0.4s ease;">${step.title}</div>
                 </div>
             `;
             routeContainer.appendChild(stepElement);
             
-            // 각 단계 요소를 순차적으로 페이드인 (더 빠르게)
+            // 각 단계 요소를 순차적으로 페이드인 (개선된 이징)
             setTimeout(() => {
                 stepElement.style.opacity = '1';
                 stepElement.style.transform = 'translateY(0)';
-            }, 150 + index * 70); // 200ms -> 150ms, 100ms -> 70ms로 더 빠르게
+            }, 150 + index * 70);
         });
 
         // Animate focus moving through steps
@@ -577,13 +582,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 체크마크로 변경
                     const iconWrapper = currentStep.querySelector('.step-icon-wrapper');
                     if (iconWrapper) {
-                        // PNG 이미지 대신 인라인 SVG 사용
-                        iconWrapper.innerHTML = `
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="7 13 10.5 16 17 9"></polyline>
-                            </svg>
-                        `;
-                        iconWrapper.classList.add('checkmark');
+                        // 아이콘 크기 변화 애니메이션 추가
+                        iconWrapper.style.transform = 'scale(1.1)';
+                        
+                        setTimeout(() => {
+                            // PNG 이미지 대신 인라인 SVG 사용
+                            iconWrapper.innerHTML = `
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="7 13 10.5 16 17 9"></polyline>
+                                </svg>
+                            `;
+                            iconWrapper.classList.add('checkmark');
+                            
+                            // 크기 원복
+                            setTimeout(() => {
+                                iconWrapper.style.transform = 'scale(1)';
+                            }, 100);
+                        }, 100);
                     }
                     
                     // 3단계: 체크마크 표시 후 완료 상태로 전환 (더 빠르게)
@@ -599,15 +614,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         if (currentStepIndex < stepElements.length - 1) {
                             // 마지막 단계가 아닐 경우에만 선 애니메이션 표시
-                            requestAnimationFrame(() => {
-                                // 레이아웃 리플로우를 강제하고, 트랜지션이 시작되기 전에 completed 클래스 추가
-                                void currentStep.offsetWidth;
-                                currentStep.classList.add('completed');
-                            });
-                        } else {
-                            // 마지막 단계는 선 없이 바로 completed 클래스만 추가
-                            currentStep.classList.add('completed');
+                            const stepLine = currentStep.querySelector('.step-line');
+                            if (stepLine) {
+                                // 선 애니메이션 실행
+                                stepLine.style.transform = 'translateX(-50%) scaleY(1)';
+                            }
                         }
+                        
+                        // 완료 표시 클래스 추가
+                        currentStep.classList.add('completed');
                         
                         // 모든 단계가 완료되었는지 확인하고 스피너를 체크 아이콘으로 변경
                         if (currentStepIndex === stepElements.length - 1) {
@@ -1050,7 +1065,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  iconWrapper.style.display = 'flex'; // Restore icon display
              }
              if(introTextSpan) {
-                 introTextSpan.textContent = '카이토 구매를 위한 최적의 경로에요'; // Restore original text
+                 introTextSpan.textContent = '카이토 100만원 구매 시 최적의 경로에요';
              }
          }
          // --- End of #kaito-intro restoration ---
