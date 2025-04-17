@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZKAP - 가상자산 최저가 구매</title>
+    <title>코인 가격 차트</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Spoqa+Han+Sans+Neo:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Spoqa+Han+Sans+Neo:wght@400;500;700;800&display=swap" rel="stylesheet">
     
     <!-- Google Analytics (GA4) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
@@ -15,77 +15,74 @@
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-        gtag('config', 'G-XXXXXXXXXX', {
-            'send_page_view': true,
-            'cookie_flags': 'secure;samesite=none',
-            'user_properties': {
-                'source': 'landing_page'
-            }
-        });
-
+        gtag('config', 'G-XXXXXXXXXX');
+        
         // 전환 추적을 위한 이벤트 헬퍼 함수
         function trackEvent(event_name, parameters) {
-            gtag('event', event_name, parameters || {});
-            console.log('GA Event:', event_name, parameters || {});
+            if (typeof gtag === 'function') {
+                gtag('event', event_name, parameters || {});
+            }
         }
-    </script>
-    
-    <!-- Microsoft Clarity -->
-    <script type="text/javascript">
-        (function(c,l,a,r,i,t,y){
-            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-        })(window, document, "clarity", "script", "jvijxxxx");
     </script>
 </head>
 <body>
     <div id="app-container">
-        <div id="slider-wrapper">
-            <!-- Screen 1: Welcome Screen -->
-            <div class="screen" id="screen1">
-                <!-- <h2 id="main-coin-title">비트코인</h2> -->
-                <div class="hook-message">
-                    <!-- 옵션 1 -->
-                    <!-- <h1 class="main-hook">지난달 사용자 평균 <span class="highlight">83,500원</span> 절약했어요!</h1> -->
-                    
-                    <!-- 옵션 2 -->
-                    <h1 class="main-hook">거래소 별 다른 가격 <br> 최저가로 구매해드려요</h1>
-                    
-                    <!-- 옵션 3 -->
-                    <!-- <h1 class="main-hook">매월 <span class="highlight">10만원</span> 투자한다면<br>거래소별로 <span class="highlight">연 45만원</span> 차이!</h1> -->
-                    
-                    <!-- 삭제할 서브훅 -->
-                </div>
-                
-                <div id="kaito-intro" class="step1-intro">
-                    <div class="kaito-icon-wrapper">
-                        <img src="images/kaito.png" alt="Kaito Coin Icon" class="kaito-icon">
+        <!-- 상단 타이틀 -->
+        <div class="hook-message">
+            <h1 class="main-hook">은행 앱처럼 쉬운 DEX 투자,<br>ZKAP이 원클릭 자동화로 실현합니다.</h1>
+            <p class="sub-hook">CEX 상장 전 기회부터 다양한 온체인 활동까지,<br>ZKAP 하나로 간편하게 참여하세요.</p>
+        </div>
+
+        <!-- 차트 카드 -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="coin-info">
+                    <div class="coin-icon">
+                        <img src="./kaito_icon.png" alt="Coin Icon" onerror="this.src='./default_icon.png'; this.onerror=null;">
                     </div>
-                    <span>최적의 경로로 자동 구매 진행 중</span>
-                </div>
-                
-                <div id="card-container">
-                    <!-- 카드 내용은 동적으로 채워지거나 초기 상태를 가집니다. -->
-                    <div class="card-content">
-                    </div>
-                </div>
-                
-                <div class="cta-container">
-                    <button class="pre-signup-btn">출시되면 알림을 받을게요</button>
+                    <span class="coin-name">KAITO</span>
                 </div>
             </div>
-
-            <!-- Screen 2: Post-Listing Graph -->
-            <!-- Screen 3: Asset Overview -->
+            
+            <div class="chart-wrapper">
+                <div class="chart-container">
+                    <div class="flash-effect" id="flashEffect"></div>
+                    <svg id="price-chart" preserveAspectRatio="none">
+                        <g class="grid"></g>
+                        <defs>
+                            <clipPath id="preLineClip">
+                                <!-- Initially covers the whole chart width -->
+                                <rect id="preLineClipRect" x="0" y="0" width="300" height="150" /> 
+                            </clipPath>
+                        </defs>
+                        <path class="area" id="price-area"></path>
+                        <path class="line" id="price-line"></path>
+                    </svg>
+                </div>
+                <div class="chart-info">
+                    <div id="final-percentage" class="chart-result"><span class="percentage-highlight">온체인 기회 포착</span>, ZKAP으로 간편하게!</div>
+                </div>
+            </div>
         </div>
-        <!-- Navigation dots (optional) -->
-        <!-- <div id="nav-dots">
-            <span class="dot active"></span>
-            <span class="dot"></span>
-        </div> -->
     </div>
 
-    <script src="script.js" defer></script>
+    <!-- CTA Container -->
+    <div class="cta-container">
+        <button class="pre-signup-btn">출시되면 알림을 받을게요</button>
+    </div>
+
+    <!-- Email Signup Modal -->
+    <div id="signup-modal" class="signup-modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h3>출시 알림 신청</h3>
+            <p>가장 먼저 출시 소식을 받아보세요!</p>
+            <input type="email" id="email-input" placeholder="이메일 주소를 입력하세요">
+            <button id="submit-email-btn">신청하기</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
