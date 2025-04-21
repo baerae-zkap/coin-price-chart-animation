@@ -1,5 +1,5 @@
 :root {
-    --background-bg-1: black;
+    --background-bg-1: #000000;
     --text-color-1-w: white;
     --text-color-2: #E8EEF2;
     --text-color-3: #BBC5CC;
@@ -11,1865 +11,1343 @@
     --brand-secondary-2: #C0C5FF;
     --alpha-neutral-a20: rgba(0, 0, 0, 0.20);
     --alpha-neutral-a30: rgba(0, 0, 0, 0.30);
-    --card-bg: rgba(137, 137, 137, 0.05);
-    --card-border: rgba(255, 255, 255, 0.09);
-    --icon-bg-1: #F7931A; /* BTC */
-    --icon-bg-2: #EDF0F4; /* ETH */
-    --icon-bg-3: #F0B90B; /* BNB (Example) */
-    --icon-bg-4: #00AEEF; /* Default/Placeholder */
-    --icon-bg-kbank: #381367; /* Kbank */
-    --icon-bg-upbit: #0A4EE7; /* Upbit */
-    --icon-bg-binance: #F0B90B; /* Binance */
-    --icon-bg-okx: #0077FF; /* OKX */
-    --icon-bg-tether: #50AF95; /* Tether */
-
+    --card-bg-start: rgba(10, 20, 30, 0.85);
+    --card-bg-end: rgba(0, 0, 0, 0.9);
+    --card-border: rgba(255, 255, 255, 0.1);
+    --card-glow-1: rgba(255, 215, 0, 0.1);
+    --card-glow-2: rgba(0, 255, 171, 0.1);
+    --pre-color: #FFD700; /* 상장 전 라인 색상 */
+    --post-color: #00FFAB; /* 상장 후 라인 색상 */
+    --area-pre-color: rgba(255, 215, 0, 0.1); /* 상장 전 영역 색상 */
+    --area-post-color: rgba(0, 255, 171, 0.1); /* 상장 후 영역 색상 */
+    --flash-color: rgba(0, 255, 171, 0.15);
 }
 
 * {
     box-sizing: border-box;
-}
-
-/* 스크롤과 관련된 전체 문서 설정 */
-html {
-    height: 100%;
-}
-body {
-    height: 100%; /* 전체 높이 */
     margin: 0;
     padding: 0;
+}
+
+html, body {
+    height: 100%;
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    background-color: var(--background-bg-1);
+}
+
+body {
     background-color: var(--background-bg-1);
     font-family: 'Spoqa Han Sans Neo', sans-serif;
     color: var(--text-color-2);
-    overflow-x: hidden; /* 가로 스크롤 방지 */
-    overflow-y: hidden; /* 세로 스크롤 숨김 */
     position: relative;
     -webkit-overflow-scrolling: touch;
+    line-height: 1.6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    min-height: 100vh;
 }
 
-/* Add pseudo-element for bottom glow */
-body::after {
-    content: '';
-    position: absolute;
-    bottom: -15%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 150%;
-    height: 40%;
-    background: radial-gradient(ellipse at bottom, rgba(0, 64, 241, 0.3) 0%, rgba(0, 64, 241, 0) 70%);
-    filter: blur(50px);
-    z-index: 0;
-    border-radius: 50%;
-    transition: opacity 0.5s ease-out; /* Allow fading out */
-}
+/* Remove body::after glow if not needed */
+/* body::after { ... } */
 
-/* 메인 컨테이너는 높이 자동, 스크롤 없음 */
 #app-container {
-    max-width: 390px;
-    min-height: 100%; /* 최소 높이 유지 */
-    height: auto;
+    max-width: 420px;
+    width: 100%;
+    min-height: 100%;
     margin: 0 auto;
     position: relative;
-    background: radial-gradient(ellipse at top, rgba(0, 40, 150, 0.2) 0%, transparent 60%),
-                radial-gradient(ellipse at bottom, rgba(0, 64, 241, 0.15) 0%, transparent 60%),
+    background: radial-gradient(ellipse at top, rgba(0, 40, 150, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom, rgba(0, 64, 241, 0.1) 0%, transparent 50%),
                 var(--background-bg-1);
     display: flex;
     flex-direction: column;
-    padding-bottom: 0; /* CTA 버튼을 위한 하단 패딩 제거 */
+    align-items: center;
+    padding-bottom: 100px; 
     z-index: 1;
-    overflow: visible; /* 내부 요소 넘침 허용 */
-}
-
-/* 슬라이더 래퍼 단순화 */
-#slider-wrapper {
-    position: relative;
-    width: 100%;
-    flex-grow: 1; /* 남은 공간 채우도록 */
     overflow: visible;
 }
 
-/* 스크린 기본 설정 */
-.screen {
-    position: relative; /* static position */
-    width: 100%;
-    min-height: 100%; /* 최소 높이 확보 */
+
+/* --- Hero Section Styles --- */
+#hero-section {
+    padding: 40px 20px 20px; /* Reduce bottom padding */
+    text-align: center;
+    /* min-height: 80vh; Remove or adjust */
     display: flex;
     flex-direction: column;
+    /* justify-content: center; Remove */
     align-items: center;
-    padding: 20px 16px 120px; /* 하단 패딩 추가 - CTA 버튼을 위한 공간 확보 */
-    overflow: visible;
-    box-sizing: border-box; /* 패딩 포함 계산 */
+    margin-bottom: 20px; /* Reduce space below hero */
 }
 
-/* 상단 훅 메시지 스타일 확인 및 강화 */
 .hook-message {
     width: 100%;
     padding: 0 20px;
-    margin-top: 20px;
-    margin-bottom: 15px; /* 카이토 설명과의 간격 */
+    margin-top: 20px; 
+    margin-bottom: 15px; /* Reduce bottom margin */
     text-align: center;
     animation: fadeInUp 0.8s ease-out forwards;
 }
 
 .main-hook {
-    font-size: 26px;
-    font-weight: 700;
+    font-size: 28px;
+    font-weight: 800;
     color: var(--text-color-1-w);
-    margin-bottom: 12px;
+    margin-bottom: 15px;
     line-height: 1.3;
+    letter-spacing: -0.02em;
 }
 
 .main-hook .highlight {
-    color: var(--hook-color, #00FFA3); /* 기본값 지정 */
+    color: #00FFAA;
     font-weight: 800;
-    font-size: 110%;
     position: relative;
     display: inline-block;
-    /* animation: pulse 2s infinite; */ /* 기존 무한 반복 */
-    animation: pulse 2s 2; /* 애니메이션을 2번 반복 */
 }
 
-/* @keyframes pulse 애니메이션 정의 주석 해제 */
+.main-hook .highlight::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 2px;
+    background-color: #00FFAA;
+    opacity: 0.4;
+}
+
+.sub-hook {
+    font-size: 16px;
+    color: var(--text-color-3);
+    max-width: 320px;
+    margin: 0 auto;
+    line-height: 1.6;
+    font-weight: 500;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes pulse {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.1);
-    }
-    100% {
-        transform: scale(1);
-    }
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.05); opacity: 1; }
 }
 
 
-/* Styles for Kaito intro section */
-.step1-intro {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px 15px;
-    margin: 0 auto -10px; /* 하단 마진을 음수로 설정해 카드와 겹치게 */
-    max-width: 300px;
-    min-height: 42px; /* 최소 높이 설정하여 높이 고정 */
-    background: transparent; /* 배경색 제거 */
-    border-radius: 20px;
-    border: none; /* 테두리 제거 */
-    position: relative;
-    z-index: 10; /* 카드보다 위에 배치 */
-    box-shadow: none; /* 그림자 제거 */
-    transition: color 0.3s ease; /* 전환 효과 수정 */
-}
-
-/* 카이토 아이콘 래퍼 스타일 추가 */
-.kaito-icon-wrapper {
-    width: 26px; /* 32px에서 26px로 줄임 */
-    height: 26px; /* 32px에서 26px로 줄임 */
-    border-radius: 50%;
-    overflow: hidden;
-    background-color: black;
-    margin-right: 10px;
-    flex-shrink: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.kaito-icon {
-    width: 80%; /* 100%에서 80%로 줄임 */
-    height: 80%; /* 100%에서 80%로 줄임 */
-    object-fit: contain; /* Ensure the entire image fits and is centered */
-}
-
-/* 카드 컨테이너 높이/마진 조정 */
-#card-container {
+/* Chart Styles */
+#chart-container {
     width: 100%;
-    margin-top: 0;
-    margin-bottom: 80px; /* 하단 여백 */
+    max-width: 400px;
+    margin: 30px auto;
     position: relative;
-    min-height: auto; /* 최소 높이 auto로 변경 */
-    height: auto;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+#price-chart {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible; /* 라인이 넘치지 않도록 수정 -> 단순화 시 overflow 필요 없을 수 있음, 우선 visible 유지 */
+}
+
+.grid line {
+    stroke: rgba(255, 255, 255, 0.05); /* 매우 투명하게 변경 */
+    stroke-width: 0.5;
+}
+
+.line {
+    fill: none;
+    stroke: var(--cta-primary); /* 파란색 변수 사용 */
+    stroke-width: 2; /* 기본 두께 약간 줄임 */
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: stroke 0.3s ease-in-out, stroke-width 0.3s ease-in-out, opacity 0.3s ease-in-out; /* Opacity 추가 */
+    opacity: 1; /* 기본 투명도 */
+}
+
+/* 상승 구간 하이라이트 스타일 */
+.line.highlight {
+    stroke: var(--cta-primary); /* ZKAP 브랜드 색상 (파란색) */
+    stroke-width: 3; /* 강조를 위해 약간 더 굵게 */
+}
+
+.area {
+    fill: none; /* 기본값은 none */
+    stroke: none;
+    opacity: 1; /* 기본 투명도 */
+    transition: opacity 0.3s ease-in-out; /* Fade 효과 */
+}
+
+/* 영역 채우기 스타일 (JS에서 클래스 추가하여 활성화) */
+.area.visible {
+    fill: url(#area-gradient); /* 그라데이션 적용 */
+    opacity: 1; /* 수정: SVG 그라데이션의 불투명도 사용 */
+}
+
+.chart-info {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    z-index: 5;
+    padding: 0 25px;
+    margin-top: 0;
+}
+
+#chart-percentage {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--positive-change);
+    letter-spacing: -0.5px;
+    position: relative;
+    display: inline-block;
+}
+
+#chart-percentage::after {
+    content: '';
+    position: absolute;
+    left: -10%;
+    right: -10%;
+    bottom: -5px;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--positive-change), transparent);
+    opacity: 0.7;
+}
+
+.percentage-sign {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--positive-change);
+    margin-left: 2px;
+}
+
+.chart-labels {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 20px;
+    margin-bottom: 10px;
+    z-index: 5;
+    position: relative;
+}
+
+.label-before {
+    font-size: 12px;
+    font-weight: 500;
+    color: #FF8A00;
+    opacity: 1;
+}
+
+.label-after {
+    font-size: 12px;
+    font-weight: 500;
+    color: #00E0FF;
+    opacity: 1;
+}
+
+.listing-label {
+    position: absolute;
+    top: 5px;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 6;
+    white-space: nowrap;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: none; /* Initially hidden */
+}
+
+.percentage-container {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+}
+
+.percentage-number {
+    font-size: 42px;
+    font-weight: 700;
+    color: #2F80ED;
+    text-shadow: 0 0 10px rgba(47, 128, 237, 0.4);
+}
+
+.percentage-symbol {
+    font-size: 32px;
+    font-weight: 600;
+    color: #2F80ED;
+    margin-left: 2px;
+    text-shadow: 0 0 10px rgba(47, 128, 237, 0.4);
+}
+
+.chart-result {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-color-1-w);
+    text-align: center;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    margin-top: 10px;
+}
+
+.percentage-highlight {
+    color: #00FFAA;
+    font-weight: 800;
+}
+
+.chart-description {
+    font-size: 16px;
+    color: #555;
+    max-width: 85%;
+    margin: 0 auto;
+    line-height: 1.4;
+}
+
+.cta-button {
+    display: block;
+    margin: 30px auto 0;
+    padding: 14px 28px;
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(20px);
+    box-shadow: 0 4px 10px rgba(66, 133, 244, 0.3);
+}
+
+.cta-button:hover {
+    background-color: #3367d6;
+    box-shadow: 0 6px 15px rgba(66, 133, 244, 0.4);
+    transform: translateY(-2px);
+}
+
+/* 반응형 스타일 */
+@media (max-width: 767px) {
+    .chart-wrapper {
+        height: 220px;
+    }
+    
+    .chart-result {
+        font-size: 18px;
+    }
+    
+    .chart-description {
+        font-size: 14px;
+    }
+    
+    .listing-label {
+        font-size: 11px;
+        padding: 3px 8px;
+        transform: translateX(-50%) translateY(-100%);
+    }
+    
+    .percentage-number {
+        font-size: 20px;
+    }
+    
+    .percentage-symbol {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .chart-wrapper {
+        height: 220px;
+    }
+    
+    .chart-result {
+        font-size: 18px;
+        bottom: 15px;
+    }
+    
+    .chart-description {
+        font-size: 13px;
+        max-width: 95%;
+    }
+    
+    .listing-label {
+        font-size: 10px;
+        padding: 2px 6px;
+        transform: translateX(-50%) translateY(-100%);
+    }
+    
+    .percentage-number {
+        font-size: 22px;
+    }
+    
+    .percentage-symbol {
+        font-size: 16px;
+    }
+    
+    .cta-button {
+        padding: 12px 24px;
+        font-size: 14px;
+    }
+}
+
+/* 새로운 키프레임 애니메이션 */
+@keyframes pulseText {
+    0%, 100% { opacity: 1; text-shadow: 0 0 10px rgba(0, 255, 195, 0.3); }
+    50% { opacity: 0.9; text-shadow: 0 0 15px rgba(0, 255, 195, 0.5); }
+}
+
+@keyframes shimmer {
+    0% { background-position: -100% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes borderGlow {
+    0%, 100% { box-shadow: 0 0 15px rgba(0, 224, 255, 0.3); }
+    50% { box-shadow: 0 0 25px rgba(0, 224, 255, 0.5); }
+}
+
+.missed-opportunity {
+    display: block;
+    font-size: 16px;
+    color: var(--missed-color);
+    margin-top: 5px;
+    font-weight: 600;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeInUp 0.8s 2.5s forwards;
+}
+
+/* highlight-message 스타일 */
+.highlight-message {
+    margin-top: 20px;
+    padding: 15px;
+    background: linear-gradient(to right, rgba(255, 138, 0, 0.08), rgba(0, 224, 255, 0.08));
+    border-radius: 12px;
+    border-left: 3px solid var(--gradient-start);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transform: translateY(15px);
+    animation: fadeInUp 0.8s 3s forwards;
+}
+
+.highlight-message p {
+    font-size: 15px;
+    color: var(--text-color-2);
+    margin: 0;
+    text-align: center;
+    line-height: 1.5;
+}
+
+.highlight-message strong {
+    color: var(--positive-change);
+    font-weight: 700;
+    position: relative;
+    display: inline-block;
+}
+
+.highlight-message strong::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    background-color: var(--positive-change);
+    opacity: 0.5;
+}
+
+/* 상장 시점 표시선 스타일 */
+.listing-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    border-left: 2px dotted rgba(255, 255, 255, 0.7);
+    z-index: 5;
+    pointer-events: none;
+    display: none; /* Initially hidden */
+}
+
+/* 반응형 조정 */
+@media (max-width: 420px) {
+    .chart-card {
+        border-radius: 18px;
+        padding: 20px 15px;
+    }
+    
+    .chart-wrapper {
+        height: 220px;
+    }
+    
+    #chart-percentage {
+        font-size: 34px;
+    }
+    
+    .percentage-sign {
+        font-size: 30px;
+    }
+    
+    .chart-result {
+        font-size: 26px;
+    }
+}
+
+.chart-card {
+    background: linear-gradient(145deg, var(--card-bg-start), var(--card-bg-end)),
+                radial-gradient(circle at top right, var(--card-glow-2), transparent 60%),
+                radial-gradient(circle at bottom left, var(--card-glow-1), transparent 60%);
+    border-radius: 24px;
+    padding: 20px 0; /* 좌우 패딩 제거 */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--card-border);
+    position: relative;
+    overflow: visible; /* 변경: 내용 잘림 방지 */
+    margin: 0 auto;
+    width: 100%;
+    max-width: 380px;
+    backdrop-filter: blur(8px);
+}
+
+.chart-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px; /* 추가 여백 */
+    padding: 0 25px;
+    width: 100%;
+    justify-content: flex-start; /* 좌측 정렬로 변경 */
     flex-shrink: 0;
-    background: transparent;
+}
+
+.coin-info {
+    display: flex;
+    align-items: center;
+}
+
+.coin-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    margin-right: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+}
+
+.coin-icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.coin-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color-1-w);
+}
+
+.chart-wrapper {
+    position: relative;
+    width: 100%;
+    height: 280px; /* 높이 추가 증가 (viewBox 높이 + 결과 텍스트 공간) */
+    margin-bottom: 0;
     overflow: visible;
 }
 
-/* CTA 컨테이너 스타일 */
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 200px; /* Explicit height */
+    overflow: visible; /* Allow labels to go outside */
+    padding-right: 55px; /* Increase space for Y-axis labels */
+    box-sizing: border-box; /* Include padding in width calculation */
+}
+
+#price-chart {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible; /* 라인이 넘치지 않도록 수정 -> 단순화 시 overflow 필요 없을 수 있음, 우선 visible 유지 */
+}
+
+.grid line {
+    stroke: rgba(255, 255, 255, 0.05); /* 매우 투명하게 변경 */
+    stroke-width: 0.5;
+}
+
+.line {
+    fill: none;
+    stroke: var(--cta-primary); /* 파란색 변수 사용 */
+    stroke-width: 2; /* 기본 두께 약간 줄임 */
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: stroke 0.3s ease-in-out, stroke-width 0.3s ease-in-out, opacity 0.3s ease-in-out; /* Opacity 추가 */
+    opacity: 1; /* 기본 투명도 */
+}
+
+/* 상승 구간 하이라이트 스타일 */
+.line.highlight {
+    stroke: var(--cta-primary); /* ZKAP 브랜드 색상 (파란색) */
+    stroke-width: 3; /* 강조를 위해 약간 더 굵게 */
+}
+
+.area {
+    fill: none; /* 기본값은 none */
+    stroke: none;
+    opacity: 1; /* 기본 투명도 */
+    transition: opacity 0.3s ease-in-out; /* Fade 효과 */
+}
+
+#final-percentage {
+    /* 애니메이션 후 표시되도록 visibility/opacity 초기화 */
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out 0.5s, visibility 0s 0.5s; /* 약간의 딜레이 후 표시 */
+    /* 나머지 스타일 유지 */
+    font-size: 22px;
+    font-weight: 700;
+    margin-top: 10px;
+}
+
+#final-percentage .percentage-highlight {
+    color: var(--post-color); /* 수익률 색상 */
+    font-weight: 800;
+}
+
+.flash-effect {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0);
+    pointer-events: none;
+    z-index: 10;
+    transition: background-color 0.3s ease-in-out;
+}
+
+@keyframes flash {
+    0% { background-color: rgba(0, 0, 0, 0); }
+    50% { background-color: var(--flash-color); }
+    100% { background-color: rgba(0, 0, 0, 0); }
+}
+
+/* CTA 버튼 스타일 */
 .cta-container {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 20px 20px 25px 20px; /* 패딩 재조정 */
-    z-index: 100;
+    padding: 20px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.95), transparent);
     display: flex;
     justify-content: center;
-    width: 100%; /* 너비 100% */
-    max-width: 390px; /* 최대 너비 유지 */
-    margin: 0 auto; /* 중앙 정렬 */
-    background: linear-gradient(to top,
-                rgba(0, 0, 0, 0.95) 0%,
-                rgba(0, 0, 0, 0.9) 30%,
-                rgba(0, 0, 0, 0.8) 50%,
-                rgba(0, 0, 0, 0.5) 70%,
-                rgba(0, 0, 0, 0) 100%); /* 그라데이션 조정 - 더 높게 확장 */
-    padding-top: 100px; /* 그라데이션 영역 증가 - 60px에서 100px로 */
-    box-sizing: border-box; /* 패딩 포함 크기 계산 */
+    max-width: 420px;
+    margin: 0 auto;
+    z-index: 50;
 }
 
-/* 사전예약 버튼 스타일 추가 */
 .pre-signup-btn {
-    background-color: var(--cta-primary);
-    color: var(--text-color-1-w);
-    font-size: 17px;
-    font-weight: 600;
+    background: var(--cta-primary);
+    color: white;
     border: none;
-    border-radius: 14px;
+    border-radius: 12px;
     padding: 15px 20px;
+    font-size: 16px;
+    font-weight: 600;
     width: 100%;
-    height: 52px;
+    max-width: 340px;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0, 64, 241, 0.4);
-    transition: all 0.3s ease;
-    /* bounce 애니메이션은 일단 제거 (필요시 추가) */
-    /* animation: bounce 1s ease-out 1s; */
+    transition: background-color 0.2s ease;
 }
 
 .pre-signup-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0, 64, 241, 0.5);
-}
-
-.pre-signup-btn:active {
-    transform: translateY(1px);
-    box-shadow: 0 2px 8px rgba(0, 64, 241, 0.3);
-}
-
-/* @keyframes bounce 제거 (필요시 추가) */
-/* @keyframes bounce { ... } */
-
-.card {
-    width: 100%;
-    height: 176px;
-    position: absolute;
-    left: 0;
-    background: var(--card-bg);
-    border-radius: 30px;
-    border: 1px solid var(--card-border);
-    backdrop-filter: blur(75px);
-    padding: 27px 16px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    opacity: 0;
-    transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1), 
-                transform 1.2s cubic-bezier(0.4, 0, 0.2, 1), 
-                height 1s cubic-bezier(0.4, 0, 0.2, 1), 
-                min-height 1s cubic-bezier(0.4, 0, 0.2, 1), 
-                z-index 0s 0.5s;
-    overflow: hidden;
-    z-index: 1;
-    cursor: default;
-    pointer-events: none; /* 마우스 이벤트를 받지 않도록 설정 */
-}
-
-/* 2~4번째 카드는 높이를 줄임 */
-#card2, #card3, #card4 {
-    height: 120px;
-    padding: 16px 16px;
-}
-
-/* Assign top positions - 카드 높이에 맞게 조정 */
-#card1 { top: 0; }
-#card2 { top: calc(176px + 16px); } /* 첫 번째 카드 아래에 위치 */
-#card3 { top: calc(176px + 16px + 120px + 16px); } /* 두 번째 카드 아래에 위치 */
-#card4 { top: calc(176px + 16px + (120px + 16px) * 2); } /* 세 번째 카드 아래에 위치 */
-
-/* Common pseudo-element styles for gradients */
-.card::before,
-.card::after {
-    content: '';
-    position: absolute;
-    border-radius: 50%;
-    opacity: 0.05; /* 은은하게 조정 */
-    filter: blur(90px);
-    z-index: -1;
-    transition: opacity 0.5s ease;
-}
-
-/* 거래소별 카드 그라데이션 */
-
-/* Bybit 카드 - 노랑/주황색 그라데이션 */
-.card.card-bybit::before {
-    width: 220px;
-    height: 120px;
-    background: #7a6625; /* 노란색 */
-    top: 0px;
-    left: 40px;
-}
-
-.card.card-bybit::after {
-    width: 170px;
-    height: 120px;
-    background: #9f631a; /* 주황색 */
-    bottom: 10px;
-    right: 30px;
-    opacity: 0.2;
-}
-
-/* Uniswap 카드 - 분홍/보라색 그라데이션 */
-.card.card-uniswap::before {
-    width: 220px;
-    height: 120px;
-    background: #FF007A; /* 분홍색 */
-    top: 0px;
-    left: 50px;
-}
-
-.card.card-uniswap::after {
-    width: 170px;
-    height: 120px;
-    background: #BD22FF; /* 보라색 */
-    bottom: 10px;
-    right: 20px;
-    opacity: 0.2;
-}
-
-/* Upbit 카드 - 파란색 그라데이션 */
-.card.card-upbit::before {
-    width: 220px;
-    height: 120px;
-    background: #0A4EE7; /* 진한 파란색 */
-    top: 0px;
-    left: 60px;
-}
-
-.card.card-upbit::after {
-    width: 170px;
-    height: 120px;
-    background: #00AEEF; /* 밝은 파란색 */
-    bottom: 10px;
-    right: 25px;
-    opacity: 0.2;
-}
-
-/* Bitget 카드 - 청록색 그라데이션 */
-.card.card-bitget::before {
-    width: 220px;
-    height: 120px;
-    background: #00D6AF; /* 청록색 */
-    top: 0px;
-    left: 70px;
-}
-
-.card.card-bitget::after {
-    width: 170px;
-    height: 120px;
-    background: #11A9BC; /* 진한 청록색 */
-    bottom: 10px;
-    right: 35px;
-    opacity: 0.2;
-}
-
-/* 다른 거래소 추가 */
-
-/* Binance 카드 */
-.card.card-binance::before {
-    width: 200px;
-    height: 120px;
-    background: #F0B90B; /* 바이낸스 노란색 */
-    top: 0px;
-    left: 80px;
-}
-
-.card.card-binance::after {
-    width: 160px;
-    height: 120px;
-    background: #333333;
-    bottom: 10px;
-    right: 40px;
-    opacity: 0.15;
-}
-
-/* OKX 카드 */
-.card.card-okx::before {
-    width: 200px;
-    height: 120px;
-    background: #0077FF;
-    top: 0px;
-    left: 90px;
-}
-
-.card.card-okx::after {
-    width: 160px;
-    height: 120px;
-    background: #00C1EB;
-    bottom: 10px;
-    right: 30px;
-    opacity: 0.2;
-}
-
-/* Coinone 카드 */
-.card.card-coinone::before {
-    width: 200px;
-    height: 120px;
-    background: #0077C9;
-    top: 0px;
-    left: 65px;
-}
-
-.card.card-coinone::after {
-    width: 160px;
-    height: 120px;
-    background: #5EB2FF;
-    bottom: 10px;
-    right: 25px;
-    opacity: 0.2;
-}
-
-/* Bithumb 카드 */
-.card.card-bithumb::before {
-    width: 200px;
-    height: 120px;
-    background: #D7352F;
-    top: 0px;
-    left: 75px;
-}
-
-.card.card-bithumb::after {
-    width: 160px;
-    height: 120px;
-    background: #FF6F6A;
-    bottom: 10px;
-    right: 35px;
-    opacity: 0.2;
-}
-
-/* 카드 호버 효과 제거 */
-.card:hover::before,
-.card:hover::after {
-    opacity: 0.05; /* 호버 효과 제거, 기본값과 동일하게 설정 */
-}
-
-/* 선택된 카드 효과 */
-.card.selected::before,
-.card.selected::after {
-    opacity: 0.25;
-    filter: blur(70px);
-}
-
-.card.visible {
-    opacity: 1;
-    transform: translateY(0);
-    z-index: 2;
-    transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1), 
-                transform 1.2s cubic-bezier(0.1, 0.7, 0.1, 1), 
-                z-index 0s;
-}
-
-.card.hidden-above {
-    transform: translateY(-30px);
-    opacity: 0;
-    transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1), 
-                opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.card.hidden-below {
-    transform: translateY(30px);
-    opacity: 0;
-    transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1), 
-                opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    position: relative;
-    padding-bottom: 10px;
-    transition: opacity 0.3s ease-out;
-}
-
-.exchange-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-}
-
-.coin-icon {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 10px;
-    font-weight: bold;
-    color: black;
-    position: relative;
-}
-
-/* Specific icon styles */
-.coin-icon.btc { background-color: var(--icon-bg-1); }
-.coin-icon.eth { background-color: var(--icon-bg-2); }
-.coin-icon.bnb { background-color: var(--icon-bg-3); }
-
-.coin-name {
-    color: var(--text-color-3);
-    font-size: 14px;
-    font-weight: 700;
-    line-height: 20px;
-    letter-spacing: 0.42px;
-}
-
-.savings-badge {
-    padding: 4px 8px;
-    background: var(--alpha-neutral-a20);
-    border-radius: 8px;
-    color: var(--brand-secondary-2);
-    font-size: 12px;
-    font-weight: 700;
-    line-height: 20px;
-    letter-spacing: 0.36px;
-}
-
-.route-section {
-    position: relative;
-    width: 100%;
-    height: 24px;
-    margin-top: 30px;
-}
-
-.route-line {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: var(--divider-1);
-    transform: translateY(-50%);
-    border-radius: 1px;
-}
-
-.route-icons {
-    display: flex;
-    position: absolute;
-    top: 10px;
-    right: 10px;
-}
-
-.route-icons .route-icon {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background-color: #8396A2;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    margin-left: -10px;
-}
-
-.route-icons .route-icon:first-child {
-    margin-left: 0;
-}
-
-.route-icon img, .route-icon .icon-placeholder {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    object-fit: contain;
-}
-
-.route-icon.kbank { background-color: var(--icon-bg-kbank); }
-.route-icon.upbit { background-color: var(--icon-bg-upbit); }
-.route-icon.binance { background-color: var(--icon-bg-binance); }
-.route-icon.okx { background-color: var(--icon-bg-okx); }
-.route-icon.tether { background-color: var(--icon-bg-tether); }
-
-.amount-saved {
-    width: 100%;
-    text-align: center;
-    color: var(--text-color-2);
-    font-size: 20px;
-    font-family: Spoqa Han Sans Neo;
-    font-weight: 700;
-    line-height: 28px;
-    letter-spacing: 0.48px;
-    margin-top: 24px;
-    transition: opacity 0.3s cubic-bezier(0.65, 0, 0.35, 1);
-}
-
-.amount-value {
-    display: inline-block;
-    min-width: 5ch;
-    text-align: right;
-}
-
-#countdown-text {
-    font-size: 13px;
-    color: var(--text-color-3);
-    text-align: center;
-    margin-top: 16px;
-    margin-bottom: 24px;
-    transition: opacity 0.5s ease;
-}
-
-.text-section {
-    margin-top: auto;
-    padding-top: 30px;
-    text-align: center;
-    position: relative;
-    z-index: 1;
-    transition: opacity 0.4s cubic-bezier(0.65, 0, 0.35, 1), 
-                transform 0.4s cubic-bezier(0.65, 0, 0.35, 1);
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.main-title {
-    color: var(--text-color-2);
-    font-size: 24px;
-    font-weight: 700;
-    line-height: 30px;
-    margin-bottom: 16px;
-}
-
-/* Style for coin icon within main-title - Use ID for specificity */
-#main-coin-title .coin-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-    line-height: 32px;
-    flex-shrink: 0;
-    transition: opacity 0.5s ease, transform 0.5s ease;
-}
-
-.sub-title {
-    color: var(--text-color-3);
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 20px;
-    letter-spacing: 0.56px;
-}
-
-.button-container {
-    padding: 24px 0 40px 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    position: relative;
-    z-index: 1;
-    transition: opacity 0.4s cubic-bezier(0.65, 0, 0.35, 1), 
-                transform 0.4s cubic-bezier(0.65, 0, 0.35, 1);
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.btn {
-    width: 100%;
-    padding: 16px;
-    border-radius: 8px;
-    font-size: 16px;
-    font-family: 'Spoqa Han Sans Neo', sans-serif;
-    font-weight: 500;
-    line-height: 24px;
-    border: none;
-    cursor: pointer;
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 4px;
-}
-
-.btn.primary {
-    background: var(--cta-primary);
-    color: var(--text-color-1-w);
-}
-
-.btn.tertiary {
-    background: var(--cta-tertiary);
-    color: var(--cta-tertiary-text);
-    outline: 1px solid var(--cta-tertiary-stroke);
-    outline-offset: -1px;
-}
-
-/* Status bar placeholder - adjust height as needed */
-/* This is handled by #app-container padding-top now */
-
-/* Styles for slider */
-#slider-wrapper {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-}
-
-.screen {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 48px 24px 36px;
-    overflow: hidden;
-}
-
-/* Adjust padding for individual screens */
-#screen1,
-#screen2,
-#screen3 {
-    padding-left: 16px;
-    padding-right: 16px;
-}
-
-/* Ensure content padding divs allow bottom content to be pushed down */
-#screen2 .content-padding,
-#screen3 .content-padding {
-     flex-grow: 1;
-     display: flex;
-     flex-direction: column;
-     width: 100%;
-     padding: 0;
-}
-
-/* Screen 3 Specific Styles */
-.asset-card-container {
-    margin-top: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.asset-card {
-    background-color: rgba(137, 137, 137, 0.05);
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    padding: 20px 16px;
-    position: relative;
-}
-
-.asset-main {
-    display: flex;
-    align-items: center;
-    margin-bottom: 16px;
-}
-
-.asset-icon {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-    margin-right: 12px;
-    color: black;
-}
-.asset-icon.btc { background-color: var(--icon-bg-1); }
-.asset-icon.eth { background-color: var(--icon-bg-2); color: #333; }
-
-.asset-name {
-    color: var(--text-color-2);
-    font-size: 16px;
-    font-weight: 500;
-    margin-right: auto;
-}
-
-.asset-total-amount,
-.detail-amount {
-    color: var(--text-color-2);
-    font-size: 16px;
-    font-weight: 700;
-}
-
-.asset-details {
-    padding-left: 21px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    position: relative;
-}
-
-/* Connecting Lines */
-.asset-details::before {
-    content: '';
-    position: absolute;
-    left: 15px;
-    top: -8px;
-    bottom: 8px;
-    width: 2px;
-    background-color: var(--divider-1);
-}
-
-.detail-item {
-    display: flex;
-    align-items: center;
-    position: relative;
-}
-
-/* Horizontal line from vertical line to detail icon */
-.detail-item::before {
-    content: '';
-    position: absolute;
-    left: -6px;
-    top: 50%;
-    width: 6px;
-    height: 2px;
-    background-color: var(--divider-1);
-}
-
-.detail-icon {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 10px;
-    font-weight: bold;
-    margin-right: 10px;
-    color: white;
-}
-/* Add specific colors/styles for new icons */
-.detail-icon.upbit { background-color: var(--icon-bg-upbit); }
-.detail-icon.coinone { background-color: #0077FF; }
-.detail-icon.bithumb { background-color: #F7931A; }
-.detail-icon.mywallet { background-color: #555; }
-
-.detail-name {
-    color: var(--text-color-3);
-    font-size: 14px;
-    margin-right: auto;
-}
-
-/* Screen 2 Specific Styles */
-.screen2-card {
-    width: 100%;
-    background-color: rgba(137, 137, 137, 0.05);
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    padding: 24px 16px;
-    margin-top: 24px;
-    display: flex;
-    flex-direction: column;
-}
-
-.screen2-header {
-    /* Removed margin-top as it's handled by card padding/margin */
-}
-
-.screen2-title-badge {
-    display: inline-block;
-    padding: 6px 12px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: var(--text-color-3);
-    font-size: 12px;
-    font-weight: 500;
-    margin-bottom: 16px;
-}
-
-.profile-section {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 32px;
-}
-
-.profile-img {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.profile-name {
-    color: var(--text-color-2);
-    font-size: 16px;
-    font-weight: 500;
-}
-
-.graph-container {
-    width: 100%;
-    height: 200px;
-    position: relative;
-    overflow: hidden;
-    margin-top: 16px;
-    margin-bottom: 16px;
-}
-
-#line-graph {
-    width: 100%;
-    height: 100%;
-}
-
-.graph-line {
-    stroke-dasharray: 1000;
-    stroke-dashoffset: 1000;
-}
-
-/* Class to trigger animation */
-.graph-line.animate {
-    animation: draw-graph 2s ease-in forwards;
-}
-
-@keyframes draw-graph {
-    to {
-        stroke-dashoffset: 0;
-    }
-}
-
-.marker-point {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background-color: #00FFA3;
-    border-radius: 50%;
-    border: 2px solid black;
-    box-shadow: 0 0 5px rgba(0, 255, 163, 0.7);
-}
-
-.marker-label {
-    position: absolute;
-    bottom: 15px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(0, 0, 0, 0.7);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 10px;
-    white-space: nowrap;
-}
-
-.percentage-text {
-    text-align: center;
-    color: var(--text-color-2);
-    font-size: 20px;
-    font-weight: 700;
-}
-
-.percentage-value {
-    display: inline-block;
-    min-width: 3ch;
-    text-align: right;
-}
-
-/* Make sure existing styles don't conflict */
-#app-container {
-    padding: 0;
-}
-
-#screen1 #card-container {
-    margin-top: 24px;
-}
-
-/* Style for the new top message on Screen 1 */
-.top-message {
-    margin-bottom: 10px; /* Adjust spacing as needed */
-    text-align: center;
-    font-size: 18px; /* Slightly smaller than main title */
-    line-height: 1.4;
-    font-weight: 500;
-    color: var(--text-color-1-w);
-    transition: opacity 0.5s ease;
-    opacity: 1; /* Visible by default */
-    display: block; /* Ensure it takes space */
-    padding: 0 15px;
-    box-sizing: border-box;
-}
-
-/* Style for the main coin title */
-#main-coin-title {
-    margin-top: 40px;
-    margin-bottom: 20px;
-    text-align: center;
-    font-size: 24px;
-    line-height: 1.4;
-    font-weight: 500;
-    color: var(--text-color-1-w);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    transition: opacity 0.5s ease, transform 0.5s ease;
-    min-height: 140px; /* 높이 늘려서 추가 텍스트 수용 */
-    width: 100%;
-    padding: 0 15px;
-    box-sizing: border-box;
-}
-
-/* Style for the subtitle on Screen 1 */
-#step1-subtitle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 20px;
-    font-size: 16px;
-    color: #555;
-}
-
-.kaito-icon {
-    width: 100%; /* Fit wrapper */
-    height: 100%; /* Fit wrapper */
-    object-fit: contain; /* Ensure the entire image fits and is centered */
-}
-
-#screen1 #countdown-text,
-#screen1 .text-section,
-#screen1 .button-container {
-    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Style for the new text section on screen 2 */
-#screen2 .text-section.screen2-text {
-    width: 100%;
-    text-align: center;
-    margin-top: 32px;
-    margin-bottom: auto;
-    padding: 0 16px;
-}
-
-#screen2 .text-section.screen2-text .main-title {
-    color: var(--text-color-2);
-    font-size: 24px;
-    font-weight: 700;
-    line-height: 30px;
-    margin-bottom: 16px;
-}
-
-#screen2 .text-section.screen2-text .sub-title {
-    color: var(--text-color-3);
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 20px;
-    letter-spacing: 0.56px;
-}
-
-/* New style for the bottom content wrapper */
-.bottom-content {
-    margin-top: auto;
-    width: 100%;
-    padding-top: 24px;
-}
-
-/* Adjust margins for text and buttons inside bottom-content */
-.bottom-content .text-section {
-    margin-top: 0;
-    margin-bottom: 24px;
-    padding: 0;
-    width: 100%;
-    box-sizing: border-box;
-    text-align: center;
-}
-
-.bottom-content .button-container {
-    margin-top: 0;
-    margin-bottom: 34px;
-    width: 100%;
-    padding: 0 16px;
-    box-sizing: border-box;
-}
-
-/* Selection Styles */
-.card.selected {
-    transform: translateY(0);
-    height: 420px;
-    z-index: 10;
-    transition: transform 1.2s cubic-bezier(0.1, 0.7, 0.1, 1), 
-                opacity 1s cubic-bezier(0.4, 0, 0.2, 1),
-                height 1s cubic-bezier(0.4, 0, 0.2, 1),
-                z-index 0s;
-}
-
-.card.deselected {
-    opacity: 0;
-    transform: translateY(30px);
-    transition: transform 1.2s cubic-bezier(0.1, 0.7, 0.1, 1), 
-                opacity 1s cubic-bezier(0.4, 0, 0.2, 1),
-                z-index 0s 1s;
-    z-index: 1;
-}
-
-.card.selected .card-header {
-    /* Optionally hide parts of the header if needed */
-    /* opacity: 0.5; /* Example */
-    position: relative; /* Ensure positioning context for the status message */
-}
-
-/* Hide static icons when animation starts (handled by JS now) */
-/* .selected .static-route-icons { display: none; } */
-
-/* Styles for Animated Route */
-.card .animated-route {
-    margin-top: 0; 
-    padding-top: 0;
-    padding-left: 0;
-    width: 100%;
-    box-sizing: border-box;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 12px; /* 각 단계 사이의 간격 조정: 24px → 12px로 절반 줄임 */
-}
-
-.card.selected .animated-route {
-    opacity: 1;
-    max-height: 600px;
-    transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1) 0.5s, 
-                max-height 0.7s cubic-bezier(0.4, 0, 0.2, 1) 0.3s;
-}
-
-/* Completion Indicator Style */
-.route-completion {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 20px;
-    padding-left: 4px;
-    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
-}
-.route-completion.hidden { opacity: 0; transform: translateX(-10px); }
-.route-completion.visible { opacity: 1; transform: translateX(0); }
-
-.route-completion .step-indicator {
-     margin-right: 16px;
-     padding-top: 2px;
-}
-.route-completion .step-icon-wrapper {
-    width: 28px; height: 28px;
-    background-color: var(--cta-primary);
-    color: white;
-    font-size: 16px;
-    font-weight: bold;
-    border: none;
-}
-.route-completion .step-title {
-    color: var(--text-color-1-w);
-    font-weight: bold;
-    font-size: 16px;
-    line-height: 1.5;
-}
-.route-completion .step-meta {
-    color: var(--text-color-3);
-    font-size: 13px;
-    margin-top: 2px;
-}
-
-/* Route Step Base Style - Now fully opaque, dimming applied selectively */
-.route-step {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    opacity: 0.5;
-    transition: opacity 0.3s ease-out, transform 0.3s ease-out;
-    padding: 0;
-    position: relative;
-    margin-bottom: 0;
-    height: 36px; /* 고정 높이 설정: 42px → 36px로 줄임 */
-}
-
-.route-step:last-child {
-    /* No specific style needed here now */
-}
-
-.route-step.active {
-    opacity: 1;
-}
-
-/* Step Indicator (Icon + Line) */
-.step-indicator {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-right: 16px;
-    position: relative;
-    flex-shrink: 0;
-    height: 100%; /* 컨테이너 높이를 꽉 채우도록 변경 */
-}
-
-/* Step Icon Wrapper - 기본 스타일 (회색) */
-.step-icon-wrapper {
-    width: 24px;
-    height: 24px;
-    border-radius: 50% !important; /* 원형 강제 적용 */
-    background-color: var(--divider-1); /* 기본 배경색: 회색 */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    z-index: 2;
-    transition: background-color 0.3s ease, transform 0.3s ease;
-    color: white; /* 아이콘 컬러: 흰색 */
-    overflow: hidden; /* 내부 콘텐츠가 영역을 벗어나지 않도록 설정 */
-    border: none; /* 테두리 제거 */
-}
-
-/* 아이콘 이미지 스타일 개선 */
-.step-icon-wrapper img,
-.step-icon-wrapper .icon-placeholder {
-    width: 18px;
-    height: 18px;
-    object-fit: contain;
-    display: block;
-}
-
-/* SVG 체크마크 아이콘을 위한 스타일 조정 */
-.step-icon-wrapper svg {
-    width: 18px;
-    height: 18px;
-    display: block;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-/* Active Step Icon - 활성화된 단계 (파란색) */
-.route-step.active .step-icon-wrapper {
-    background-color: var(--cta-primary); /* 활성화 배경색: 파란색 */
-    transform: scale(1.1);
-}
-
-/* Checkmark Icon - 체크마크 효과 */
-.step-icon-wrapper.checkmark {
-    background-color: var(--cta-primary); /* 체크마크 배경색: 파란색 */
-    transform: scale(1.1);
-}
-
-/* Step Line - 기본 선과 진행 선 겹치도록 수정 */
-.step-line {
-    width: 2px;
-    background-color: var(--divider-1);
-    position: absolute;
-    top: 24px; /* 아이콘의 중앙에서 시작하도록 조정 */
-    height: calc(100% + 12px); /* 충분한 여유 추가 */
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1; /* 아이콘 뒤에 위치하도록 설정 */
-}
-
-/* 마지막 단계는 선이 없음 */
-.route-step:last-child .step-line {
-    display: none;
-}
-
-/* 활성화된 단계의 진행 선 - 겹쳐서 표시하기 위해 가상 요소 사용 */
-.route-step.active .step-line::after,
-.route-step.completed .step-line::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    background-color: var(--cta-primary);
-    z-index: 1;
-}
-
-/* 완료된 단계의 진행 선 - 완전히 채워짐 */
-.route-step.completed .step-line::after {
-    height: 100%;
-    transition: height 0.5s ease; /* 채워지는 애니메이션만 적용 */
-}
-
-/* 선이 채워지는 애니메이션 제거 (transition으로 대체) */
-@keyframes fillLine {
-    0% {
-        height: 0;
-        top: 28px;
-    }
-    100% {
-        height: calc(100% + 5px); /* 완전히 채움 시 높이: 10px → 5px로 줄임 */
-        top: 28px;
-    }
-}
-
-/* Step Details (Text) */
-.step-details {
-    padding-top: 0;
-    flex-grow: 1;
-}
-
-.step-title {
-    font-weight: 500;
-    color: var(--text-color-3);
-    line-height: 1.5;
-    transition: color 0.3s ease;
-}
-/* Active Step Text */
-.route-step.active .step-title {
-    color: var(--text-color-1-w);
-}
-/* Completed Step Text */
-.route-step.completed .step-title {
-    color: var(--text-color-3);
-    font-weight: 400;
-}
-
-/* Style for the new route progress message */
-#route-progress-message {
-    position: absolute;
-    top: 24px;
-    right: 16px;
-    color: var(--text-color-2);
-    font-size: 13px;
-    font-weight: 500;
-    opacity: 0;
-    transition: opacity 0.5s ease-in-out;
-    text-align: right;
-    line-height: 1.4;
-}
-
-/* Card Header Icon Styles for Image */
-.exchange-icon {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: black;
-    overflow: hidden;
-    position: relative;
-}
-
-.exchange-icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: block;
-    border-radius: inherit;
-}
-
-.exchange-icon .icon-placeholder {
-    font-size: 10px;
-    font-weight: bold;
-    line-height: 30px;
-    text-align: center;
-    width: 100%;
-    height: 100%;
-    background-color: #ccc;
-}
-
-/* Specific backgrounds should still apply */
-.exchange-icon.binance {
-    background-color: var(--icon-bg-binance);
-}
-.exchange-icon.upbit {
-    background-color: var(--icon-bg-upbit);
-}
-
-/* Style for the new Order Status message (Reverted to absolute positioning) */
-#order-status-message {
-    position: absolute;
-    top: 0; /* Align to the top of the header */
-    right: 0; /* Align to the right of the header */
-    background-color: rgba(0, 64, 241, 0.1); /* Subtle background */
-    color: var(--cta-primary);
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 500;
-    opacity: 0; /* Initially hidden */
-    transition: opacity 0.3s ease-out;
-    display: none; /* Use display none initially */
-}
-
-.card.selected #order-status-message {
-    display: block; /* Show when card is selected */
-    /* opacity is handled by JS now */
-}
-
-/* Animated route adjustments */
-.card .animated-route {
-     margin-top: 0; 
-     padding-top: 0;
-     padding-left: 0;
-     width: 100%;
-     box-sizing: border-box;
-     position: relative;
-     display: flex;
-     flex-direction: column;
-     gap: 12px; /* 각 단계 사이의 간격 조정: 24px → 12px로 절반 줄임 */
-}
-
-/* Style for the 'complete' step icon */
-.step-icon-wrapper.complete {
-    background-color: var(--cta-primary) !important; /* Always use primary color */
-    color: white !important; /* Always use white text */
-    font-weight: bold;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 16px; /* Checkmark size */
-}
-
-/* Hide image/placeholder if present in complete step (unlikely but safe) */
-.step-icon-wrapper.complete img,
-.step-icon-wrapper.complete .icon-placeholder {
-    display: none;
-}
-
-.route-step:not(.active):not(.completed) .step-icon-wrapper img,
-.route-step:not(.active):not(.completed) .step-icon-wrapper .icon-placeholder {
-    /* opacity: 0.7; */ /* Removed */
-}
-
-/* 주문 완료 상태 스타일 */
-.order-complete {
-    position: absolute; /* 카드 컨테이너 기준 절대 위치 */
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 368px; /* Revert height to fill container */
-    display: none; /* 수정: JS에서 보이도록 하기 전까지 숨김 */
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--card-bg); /* 카드 배경과 동일하게 */
-    border-radius: inherit; /* 부모 radius 상속 */
-    z-index: 10; /* 다른 카드나 요소들보다 확실히 위에 오도록 설정 */
-    opacity: 0; /* 기본 숨김 */
-    visibility: hidden; /* 추가: 완전히 숨김 */
-    pointer-events: none; /* 기본 비활성 */
-    transition: opacity 0.5s ease-in-out, visibility 0s linear 0.5s; /* visibility는 지연 후 즉시 변경 */
-}
-
-.order-complete.show {
-    opacity: 1;
-    visibility: visible; /* 보이도록 설정 */
-    pointer-events: auto;
-    transition: opacity 0.5s ease-in-out, visibility 0s linear 0s; /* 즉시 visible */
-}
-
-/* 최종 체크 아이콘 SVG 스타일 및 애니메이션 (클래스명 수정됨) */
-.final-checkmark {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    display: block;
-    stroke-width: 4;
-    stroke: var(--cta-primary); /* 파란색 체크 */
-    stroke-miterlimit: 10;
-    margin: 0 auto 20px auto; /* 아이콘과 텍스트 사이 간격 */
-    box-shadow: inset 0px 0px 0px var(--cta-primary);
-    animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
-}
-
-.final-checkmark__circle {
-    stroke-dasharray: 166;
-    stroke-dashoffset: 166;
-    stroke-width: 3;
-    stroke-miterlimit: 10;
-    stroke: var(--cta-primary);
-    fill: none;
-    animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
-}
-
-.final-checkmark__check {
-    transform-origin: 50% 50%;
-    stroke-dasharray: 48;
-    stroke-dashoffset: 48;
-    stroke-width: 4; /* 체크 두께 조정 */
-    animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
-}
-
-/* 완료 텍스트 스타일 */
-.complete-text {
-    color: var(--text-color-1-w); /* 흰색 텍스트 */
-    font-size: 20px;
-    font-weight: 700;
-    text-align: center;
-    margin: 0;
-}
-
-/* 체크 아이콘 애니메이션 Keyframes (여기서는 변경 없음) */
-@keyframes stroke {
-    100% {
-        stroke-dashoffset: 0;
-    }
-}
-
-@keyframes scale {
-    0%, 100% {
-        transform: none;
-    }
-    50% {
-        transform: scale3d(1.1, 1.1, 1);
-    }
-}
-
-@keyframes fill {
-    100% {
-        box-shadow: inset 0px 0px 0px 40px var(--cta-primary); /* 원 채우기 */
-    }
-}
-
-/* Payment Complete Screen */
-.payment-complete {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 368px; /* Correct height */
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    /* Explicitly remove card styles */
-    background: transparent !important;
-    border: none !important;
-    backdrop-filter: none;
-    border-radius: 0;
-    /* Remove comments for card styles */
-    /* background: var(--card-bg); */
-    /* border: 1px solid var(--card-border); */
-    /* backdrop-filter: blur(75px); */
-    /* border-radius: 30px; */
-    opacity: 0;
-    transition: opacity 0.5s ease-in-out;
-    z-index: 15; /* Ensure it's above other card content */
-}
-
-.payment-complete.show {
-    opacity: 1;
-    /* Trigger checkmark animation when shown */
-}
-
-/* Apply animation directly to children when parent has .show */
-.payment-complete.show .final-checkmark.blue .final-checkmark__circle {
-    animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
-}
-.payment-complete.show .final-checkmark.blue .final-checkmark__check {
-    /* transform-origin is okay on base element */
-    /* stroke-dasharray/offset are okay on base element */
-    animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
-}
-
-.final-checkmark.blue {
-    width: 80px; /* Slightly larger maybe */
-    height: 80px;
-    display: block;
-    margin-bottom: 20px; /* Space between check and text */
-}
-
-.final-checkmark.blue .final-checkmark__circle {
-    stroke-dasharray: 166;
-    stroke-dashoffset: 166;
-    stroke-width: 3; /* Thicker stroke */
-    stroke-miterlimit: 10;
-    stroke: var(--text-color-1-w); /* Change border to white */
-    fill: none;
-    /* animation property removed from here, triggered by .show class on parent */
-    animation-fill-mode: forwards; /* Keep fill mode */
-}
-
-.final-checkmark.blue .final-checkmark__check {
-    transform-origin: 50% 50%;
-    stroke-dasharray: 48;
-    stroke-dashoffset: 48;
-    stroke-width: 3; /* Thicker stroke */
-    stroke: var(--text-color-1-w); /* Change check to white */
-    fill: none;
-    /* animation property removed from here, triggered by .show class on parent */
-    animation-fill-mode: forwards; /* Keep fill mode */
-}
-
-/* Reuse existing complete-text or add specific styles */
-.payment-complete .complete-text {
-    color: var(--text-color-1-w); /* White text */
-    font-size: 18px;
-    font-weight: 500;
-    text-align: center;
-}
-
-/* Ensure existing keyframes are sufficient, no new ones needed for blue */
-
-/* ... Rest of CSS ... */
-
-#main-coin-title {
-    margin-top: 40px;
-    margin-bottom: 20px;
-    text-align: center;
-    font-size: 24px;
-    line-height: 1.4;
-    font-weight: 500;
-    color: var(--text-color-1-w);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    transition: opacity 0.5s ease, transform 0.5s ease;
-    min-height: 140px; /* 높이 늘려서 추가 텍스트 수용 */
-    width: 100%;
-    padding: 0 15px;
-    box-sizing: border-box;
-}
-
-/* 주문 완료 체크마크 스타일 */
-.order-complete svg polyline,
-.payment-complete svg polyline {
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-#compare-title {
-    text-align: center;
-    margin-bottom: 20px;
-    font-size: 18px;
-    font-weight: 500;
-    color: #333;
-    transition: opacity 0.3s ease;
-}
-
-/* 기본 .step1-intro span 스타일 */
-.step1-intro span {
-    font-size: 14px;
-    color: var(--text-color-3); /* 더 어두운 텍스트 색상으로 변경 */
-    font-weight: 400; /* 텍스트 굵기 증가 */
-    letter-spacing: -0.2px;
-    transition: color 0.3s ease, font-weight 0.3s ease; /* 부드러운 전환 */
-}
-
-/* Hide the intro when a card is selected or interaction starts */
-.step1-intro.hidden {
-    opacity: 0;
-    pointer-events: none; /* Prevent interaction when hidden */
-}
-
-/* 브라우저 해상도 대응을 위한 추가 스타일 */
-@media screen and (max-height: 780px) {
-    #app-container {
-        padding-bottom: 0; /* 패딩 제거 */
-    }
-    
-    .screen {
-        padding-bottom: 140px; /* 화면 높이가 작을 때 하단 패딩 증가 */
-    }
-    
-    #card-container {
-        min-height: auto; /* 최소 높이 auto로 변경 */
-        margin-bottom: 60px; /* 작은 화면에서 하단 여백 조정 */
-    }
-    
-    /* 화면이 작을 때 카드 간격 조정 */
-    #card2 { top: calc(176px + 10px); } /* 간격 축소 */
-    #card3 { top: calc(176px + 10px + 120px + 10px); } /* 간격 축소 */
-    #card4 { top: calc(176px + 10px + (120px + 10px) * 2 - 60px); } /* 마지막 카드 위치 더 위로 조정 */
-    
-    .cta-container {
-        padding-bottom: 20px; /* 패딩 조정 */
-        padding-top: 120px; /* 그라데이션 영역 증가 */
-    }
-}
-
-/* 매우 작은 화면에서 추가 최적화 */
-@media screen and (max-height: 700px) {
-    .screen {
-        padding-bottom: 120px; /* 더 작은 화면 패딩 조정 */
-    }
-    
-    #card-container {
-        min-height: auto;
-        margin-bottom: 40px; /* 더 작은 화면에서는 더 작은 여백 */
-    }
-    
-    /* 카드 크기와 간격 더 축소 */
-    #card1 { height: 160px; }
-    #card2, #card3, #card4 { height: 110px; }
-    
-    #card2 { top: calc(160px + 8px); }
-    #card3 { top: calc(160px + 8px + 110px + 8px); }
-    #card4 { top: calc(160px + 8px + (110px + 8px) * 2 - 70px); } /* 마지막 카드를 더 위로 배치 */
-    
-    .cta-container {
-        padding-top: 120px; /* 그라데이션 영역 증가 */
-    }
-}
-
-/* Spinner Styles */
-.spinner {
-    border: 4px solid rgba(0, 0, 0, 0.1); /* Light grey border */
-    border-left-color: #007bff; /* Blue spinner color */
-    border-radius: 50%;
-    width: 20px; /* Adjust size as needed */
-    height: 20px; /* Adjust size as needed */
-    animation: spin 1s linear infinite;
-    margin: 0 10px; /* Add some spacing */
-    display: none; /* 기본적으로 숨김 */
-    vertical-align: middle; /* Align vertically with text */
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* #kaito-intro에 loading 클래스가 있을 때만 스피너 표시 */
-#kaito-intro.loading .spinner {
-    display: inline-block;
-}
-
-/* Adjust kaito-intro layout if needed */
-#kaito-intro {
-    display: flex; /* Use flexbox for alignment */
-    align-items: center; /* Center items vertically */
-    justify-content: center; /* Center items horizontally (optional) */
-    /* Add other styling as needed */
-    transition: background-color 0.3s ease, box-shadow 0.3s ease; /* existing transition */
-}
-
-/* Ensure icon and text align well with the spinner */
-.kaito-icon-wrapper, #kaito-intro span {
-    vertical-align: middle;
-}
-/* 주문 완료 시 스타일 */
-.step1-intro.completed {
-    background: rgba(0, 64, 241, 0.9); /* 파란색 배경 */
-    border-color: rgba(0, 64, 241, 0.95);
-    box-shadow: 0 4px 15px rgba(0, 64, 241, 0.5);
-}
-
-.step1-intro.completed .kaito-icon-wrapper {
-    background: white;
-    border-color: white;
-    box-shadow: none;
-}
-
-.step1-intro.completed .kaito-icon-wrapper img {
-    filter: brightness(0) invert(1); /* 아이콘 색상 반전 (선택적) */
-}
-
-.step1-intro.completed span {
-    font-weight: 700;
-    color: white;
-    font-size: 14px; /* 폰트 크기 수정 */
-    letter-spacing: -0.2px; /* 레터 스페이싱 추가 */
+    background-color: #0030C1;
 }
 
 /* 모달 스타일 */
 .signup-modal {
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.75);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    backdrop-filter: blur(5px);
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 100;
 }
 
 .modal-content {
-    background-color: #1A1D29;
-    border-radius: 24px;
-    padding: 35px 25px;
-    width: 85%;
-    max-width: 360px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 64, 241, 0.15);
+    background-color: #111;
+    border-radius: 16px;
+    padding: 30px;
+    width: 90%;
+    max-width: 350px;
+    margin: 20% auto 0;
     position: relative;
-    animation: modalFadeIn 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-@keyframes modalFadeIn {
-    from {
-        opacity: 0;
-        transform: scale(0.95) translateY(15px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .close-btn {
     position: absolute;
-    top: 20px;
-    right: 20px;
-    font-size: 28px;
-    color: #999;
+    top: 15px;
+    right: 15px;
+    font-size: 24px;
+    color: rgba(255, 255, 255, 0.7);
     cursor: pointer;
-    transition: color 0.2s, transform 0.2s;
-    height: 28px;
-    width: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-}
-
-.close-btn:hover {
-    color: #fff;
-    transform: scale(1.1);
 }
 
 .modal-content h3 {
-    color: #fff;
-    font-size: 22px;
-    margin-bottom: 25px;
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: white;
     text-align: center;
-    font-weight: 700;
-    letter-spacing: -0.2px;
+    font-size: 20px;
 }
 
 .modal-content p {
-    color: #BBC5CC;
-    font-size: 16px;
-    margin-bottom: 25px;
+    color: rgba(255, 255, 255, 0.7);
     text-align: center;
-    line-height: 1.5;
+    margin-bottom: 20px;
 }
 
-.modal-content input {
+.modal-content input[type="email"] {
     width: 100%;
-    padding: 16px 18px;
-    margin-bottom: 25px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    color: #fff;
-    font-size: 16px;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.modal-content input:focus {
-    outline: none;
-    border-color: var(--cta-primary);
-    box-shadow: 0 0 0 3px rgba(0, 64, 241, 0.15);
+    padding: 12px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
 }
 
 .modal-content button {
-    display: block;
     width: 100%;
-    padding: 16px;
-    background: var(--cta-primary);
+    padding: 12px;
+    background-color: #2F80ED;
     color: white;
     border: none;
-    border-radius: 14px;
-    font-size: 17px;
+    border-radius: 8px;
+    font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 4px 15px rgba(0, 64, 241, 0.3);
 }
 
-.modal-content button:hover {
-    background: var(--cta-primary);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 64, 241, 0.4);
+/* 반응형 조정 */
+@media (max-width: 480px) {
+    .chart-card {
+        padding: 15px 20px;
+        border-radius: 20px;
+    }
+    
+    .hook-message {
+        margin-bottom: 20px;
+    }
+    
+    .main-hook { font-size: 24px; }
+    .sub-hook { font-size: 15px; }
+    
+    .coin-icon { width: 32px; height: 32px; }
+    .coin-name { font-size: 16px; }
+    
+    .chart-wrapper { height: 180px; }
+    .chart-result { font-size: 18px; }
+    
+    .listing-label { font-size: 10px; padding: 4px 8px; }
+    
+    .pre-signup-btn { padding: 14px 18px; font-size: 15px; }
 }
 
-.modal-content button:active {
-    transform: translateY(1px);
-    box-shadow: 0 2px 8px rgba(0, 64, 241, 0.3);
+/* 그리드 라인 스타일 */
+.grid-lines line {
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 0.5;
+    stroke-dasharray: 3, 3;
+}
+
+/* 상장 시점 세로선 스타일 */
+.listing-vertical-line {
+    stroke: rgba(255, 255, 255, 0.8);
+    stroke-width: 1;
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
+}
+
+/* 상장 시점 광선 효과 스타일 */
+.listing-glow-line {
+    stroke: rgba(0, 64, 241, 0.5); /* 프라이머리 컬러 */
+    stroke-width: 3;
+    filter: drop-shadow(0 0 8px rgba(0, 64, 241, 0.6));
+}
+
+.chart-line {
+    transition: stroke-dashoffset 0.5s ease;
+}
+
+/* 퍼센트 하이라이트 색상 */
+.percentage-highlight {
+    color: #0040F1; /* 프라이머리 컬러 */
+    font-weight: 800;
+}
+
+/* 상장 텍스트 배경 스타일 */
+text {
+    font-family: 'Spoqa Han Sans Neo', sans-serif;
+}
+
+.listing-vertical-line {
+    stroke: rgba(255, 255, 255, 0.8);
+    stroke-width: 1;
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
+}
+
+/* --- New Chart Animation Styles --- */
+
+.chart-wrapper {
+    position: relative; /* For absolute positioning of label */
+    /* 기존 height나 다른 속성은 유지 */
+}
+
+.chart-container {
+    /* 기존 스타일 유지, SVG를 담는 컨테이너 */
+    position: relative; /* If needed for absolute positioning inside */
+    height: 200px; /* Example height, adjust as needed */
+    margin-top: 30px; /* Add space for the label above */
+}
+
+#price-chart {
+    /* 기존 스타일 유지 */
+    overflow: visible; /* Allows drawing outside the initial viewbox if needed */
+}
+
+.chart-status-label {
+    position: absolute;
+    top: 10px; /* Adjust as needed */
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-color-2);
+    background-color: rgba(0, 0, 0, 0.5); /* Optional background */
+    padding: 4px 10px;
+    border-radius: 12px;
+    z-index: 10;
+    transition: opacity 0.3s ease-in-out, background-color 0.3s ease-in-out; /* Smooth transition for label change */
+}
+
+#pre-listing-line {
+    stroke: #FFD700; /* 노란색 */
+    stroke-width: 2;
+    fill: none;
+    visibility: visible; /* 상장 전 라인은 보이도록 */
+}
+
+#post-listing-line {
+    stroke: #00FFAB; /* 밝은 녹색/청록색 */
+    stroke-width: 2.5; /* 약간 더 굵게 */
+    fill: none;
+    visibility: hidden; /* 초기 숨김 */
+}
+
+#listing-marker {
+    stroke: #FFFFFF; /* 흰색 점선 */
+    stroke-width: 1;
+    stroke-dasharray: 4 2;
+    visibility: hidden; /* 초기 숨김 */
+}
+
+.chart-info {
+    /* 기존 스타일 유지하되, 위치 조정 필요 시 수정 */
+    /* 예: position: relative; or static; depending on layout */
+    text-align: center;
+    margin-top: 15px; /* 차트 아래 공간 */
+}
+
+#final-percentage {
+    /* 기존 .chart-result 스타일 활용 가능 */
+    visibility: hidden; /* 초기 숨김 */
+    opacity: 0; /* 초기 숨김 */
+    font-size: 22px; /* Adjust size as needed */
+    font-weight: 700;
+}
+
+#final-percentage .percentage-highlight {
+    /* 기존 스타일 활용 */
+    color: #00FFAB; /* 상장 후 라인 색상과 일치 */
+    font-weight: 800;
+}
+
+/* 기존 #chart-percentage 관련 스타일 제거 또는 주석 처리 */
+/* #chart-percentage { ... } */
+/* #chart-percentage::after { ... } */
+
+/* Make sure container sizes are appropriate */
+@media (max-width: 480px) {
+    .chart-container {
+        height: 180px; /* Adjust for smaller screens */
+    }
+    .chart-status-label {
+        font-size: 14px;
+    }
+    #final-percentage {
+        font-size: 20px;
+    }
+}
+
+/* --- Scene Animation Styles --- */
+
+/* General Scene Container Styling (Chart Scene uses this) */
+.scene-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Center content vertically */
+    align-items: center; /* Center content horizontally */
+    opacity: 0; /* Hidden by default */
+    pointer-events: none;
+    transition: opacity 0.5s ease-in-out, transform 0.7s ease-in-out;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.scene-container.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Initial State Container */
+#initial-state-container {
+    position: relative; /* Or absolute depending on parent */
+    width: 100%;
+    display: flex;
+    flex-direction: column; /* Stacks cards vertically */
+    align-items: center;
+    padding: 20px; /* Padding for spacing */
+    box-sizing: border-box;
+    transition: opacity 0.5s ease-in-out;
+}
+
+/* Holding Card (Always Compact & Shows Asset Info) */
+.holding-card-style {
+    position: relative; /* Ensure default is relative */
+    background: linear-gradient(145deg, rgba(30, 40, 60, 0.85), rgba(10, 15, 25, 0.9));
+    border-radius: 16px;
+    padding: 15px 25px;
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(6px);
+    width: 90%;
+    max-width: 340px;
+    height: auto;
+    z-index: 15;
+    opacity: 1;
+    pointer-events: auto;
+    /* Ensure transform is part of the transition */
+    transition: opacity 0.5s ease-in-out, transform 0.7s ease-in-out, box-shadow 0.5s ease-in-out, padding 0.7s ease-in-out, border-color 0.4s ease-in-out;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 15px;
+    /* Remove transform: none; if present */
+}
+/* Default internal styles (Asset info visible and smaller) */
+.holding-card-style .asset-info {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: flex-start;
+    margin-bottom: 8px; /* Reduced margin */
+    opacity: 1;
+    visibility: visible;
+}
+.holding-card-style .coin-icon {
+    width: 28px; /* Slightly smaller icon */
+    height: 28px;
+    margin-right: 8px; /* Reduced margin */
+    border-radius: 50%; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.2); flex-shrink: 0;
+}
+.holding-card-style .coin-icon img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.holding-card-style .coin-name {
+    font-size: 15px; /* Slightly smaller name */
+    font-weight: 600; color: var(--text-color-1-w);
+}
+.holding-card-style .asset-value-container { text-align: right; width: 100%; }
+
+/* NEW: Style for rows */
+.holding-card-style .value-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px; /* Adjust spacing */
+}
+.holding-card-style .profit-row {
+    text-align: right;
+    margin-top: 6px; /* Adjust spacing */
+}
+
+/* MODIFIED: Remove display: block and adjust */
+.holding-card-style .asset-label {
+    /* display: block; REMOVED */
+    font-size: 12px;
+    color: var(--text-color-3);
+    margin-bottom: 0; /* Removed bottom margin here */
+    flex-shrink: 0;
+    margin-right: 10px;
+}
+.holding-card-style .asset-value {
+    /* display: block; REMOVED */
+    font-size: 17px;
+    font-weight: 700; color: var(--text-color-1-w); line-height: 1.2;
+    text-align: right;
+}
+/* Optional: Specific style for token quantity if needed */
+.holding-card-style .token-quantity {
+    /* font-size: 16px; /* Example: Slightly smaller */
+}
+.holding-card-style .asset-percentage {
+    /* display: block; REMOVED */
+    font-size: 12px;
+    font-weight: 500; color: var(--text-color-3);
+    margin-top: 0; /* Removed top margin here */
+    transition: color 0.3s ease-in-out;
+}
+.holding-card-style .asset-percentage.positive { color: #00FFAB; }
+
+/* History Card styles remain the same */
+/* ... */
+.history-card-style { position: relative; background: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 15px 20px; width: 90%; max-width: 340px; border: 1px solid rgba(255, 255, 255, 0.05); transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; opacity: 1; z-index: 14; margin-left: auto; margin-right: auto; }
+.history-label { display: block; font-size: 12px; color: var(--text-color-3); margin-bottom: 10px; font-weight: 500; }
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+.history-item:last-child { margin-bottom: 0; }
+.history-coin {
+    color: var(--text-color-2);
+    font-weight: 500;
+    flex-basis: 40%;
+    text-align: left;
+    word-break: keep-all;
+    line-height: 1.4;
+}
+.history-amount {
+    color: var(--text-color-2);
+    flex-basis: 35%;
+    text-align: right;
+}
+.history-status {
+    color: #00FFAB;
+    font-size: 13px;
+    flex-basis: 25%;
+    text-align: right;
+}
+
+/* Animation: Holding card moves down */
+.holding-card-style.move-down {
+    transform: translateY(356px); /* 위치 조정: 316px -> 356px */
+    opacity: 0.95; 
+    z-index: 16;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Holding card moves back up (Refocus) */
+.holding-card-style.refocus {
+    transform: translateY(0);
+    opacity: 1;
+    z-index: 20;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    /* Layout styles are now handled by base .holding-card-style */
+}
+
+/* Scene 2: Chart Scene styles remain the same */
+/* ... */
+
+/* Remove unused styles */
+.invest-ui, .asset-display, .result-display { display: none; }
+#zkap-reveal, .zkap-reveal-container,
+#zkap-ui-mockup, .zkap-ui-container,
+#zkap-final-scene, .zkap-final-container {
+    display: none;
+}
+
+/* Animation container height adjustment */
+.animation-container {
+    position: relative;
+    height: 520px; /* Re-apply fixed height */
+    padding-top: 0; 
+    padding-bottom: 0; /* Remove padding, use absolute positioning */
+    box-sizing: border-box;
+    width: 100%; 
+    margin-top: 0; 
+}
+
+#initial-state-container {
+    /* Keep its relative positioning and layout */
+    position: relative; 
+    width: 100%;
+    display: flex;
+    flex-direction: column; 
+    align-items: center;
+    padding: 20px;
+    box-sizing: border-box;
+    transition: opacity 0.5s ease-in-out;
+}
+
+#scene2-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 180px); /* 하단 카드용 공간 증가: 140px -> 180px */
+    display: flex; 
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    opacity: 0; 
+    pointer-events: none;
+    transition: opacity 0.5s ease-in-out, transform 0.7s ease-in-out;
+    padding: 15px 20px 0 20px;
+    box-sizing: border-box;
+}
+#scene2-container.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Adjust chart header margin if needed */
+.chart-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px; /* Further reduce margin */
+    padding: 0 25px;
+    width: 100%;
+    justify-content: flex-start; /* 좌측 정렬로 변경 */
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+/* Final message styling if needed */
+/* #final-message { ... } */
+
+/* --- Rest of the CSS --- */
+
+/* 거래소 상장 레이블 스타일 */
+.listing-label {
+    position: absolute;
+    top: 5px;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 6;
+    white-space: nowrap;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: none; /* Initially hidden */
+}
+
+/* 그래프 포인트 마커 스타일 */
+.point-marker {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #0040F1; /* 파란색 마커 */
+    border: 2px solid white;
+    transform: translate(-50%, -50%);
+    z-index: 30; /* 정보 툴팁(31) 보다는 아래 */
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    display: none; /* 초기 숨김 */
+}
+
+/* 포인트 정보 스타일 */
+.point-info {
+    position: absolute;
+    padding: 8px 12px; 
+    background: rgba(0, 0, 0, 0.85); 
+    color: white;
+    border-radius: 8px;
+    font-size: 13px; 
+    font-weight: 500;
+    z-index: 31; /* Increase z-index (above marker) */
+    transform: translate(-50%, 20px); /* Y 오프셋 조정 */
+    pointer-events: none;
+    white-space: nowrap;
+    border: 1px solid rgba(255, 255, 255, 0.15); 
+    /* 추가 스타일 */
+    min-width: 180px; /* 최소 너비 설정 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* 그림자 추가 */
+}
+
+.point-info .info-line {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px; /* 라인 간 간격 */
+}
+
+.point-info .info-line:last-child {
+    margin-bottom: 0;
+}
+
+.point-info .date-time-line {
+    justify-content: space-between; /* 날짜와 시간을 양 끝으로 */
+    font-size: 12px; /* 약간 작은 글씨 */
+    color: var(--text-color-3); /* 약간 흐린 색 */
+    margin-bottom: 6px; /* 아래 라인과 간격 */
+}
+
+.point-info .icon {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px; /* 아이콘과 텍스트 간격 */
+}
+
+.point-info .price-icon {
+    background-color: #FF4D4F; /* 빨간색 계열 */
+}
+
+/* 수익률 표시 스타일 (옵션) */
+.point-info .percentage-line {
+    font-size: 12px;
+    color: var(--text-color-3);
+    justify-content: flex-end; /* 오른쪽 정렬 */
+    margin-top: 2px;
+}
+
+/* 크로스헤어 라인 스타일 */
+.crosshair-line {
+    stroke: rgba(187, 197, 204, 0.5); /* --text-color-3 에 투명도 적용 */
+    stroke-width: 1;
+    stroke-dasharray: 3, 3; /* 점선 스타일 */
+    pointer-events: none; /* 마우스 이벤트 통과 */
+    display: none; /* 초기 숨김 */
+}
+
+/* 축 레이블 스타일 */
+.axis-labels text {
+    fill: var(--text-color-3);
+    font-size: 10px;
+    font-family: 'Spoqa Han Sans Neo', sans-serif;
+}
+
+#y-axis-labels text {
+    text-anchor: end; /* Y축 레이블 오른쪽 정렬 */
+}
+
+#x-axis-labels text {
+    text-anchor: middle; /* X축 레이블 가운데 정렬 */
+}
+
+/* 레이블 그룹 기본 투명도 설정 */
+#x-axis-labels,
+#y-axis-labels {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out; /* 부드러운 전환 효과 */
+}
+
+/* SVG 그라데이션 정의 */
+svg defs {
+    /* defs 요소가 필요할 수 있음 */
+}
+
+#area-gradient stop:nth-child(1) {
+    stop-color: var(--cta-primary);
+    stop-opacity: 0.4;
+}
+
+#area-gradient stop:nth-child(2) {
+    stop-color: var(--cta-primary);
+    stop-opacity: 0;
+}
+
+/* 기존 #chart-percentage 관련 스타일 제거 또는 주석 처리 */
+/* #chart-percentage { ... } */
+/* #chart-percentage::after { ... } */
+
+/* 코인 정보 스타일 업데이트 */
+.coin-info {
+    display: flex;
+    align-items: center;
+}
+
+.coin-title {
+    display: flex;
+    flex-direction: column;
+    margin-left: 12px;
+}
+
+.coin-name-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.coin-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-color-1-w);
+    margin-right: 8px;
+}
+
+.coin-price-label {
+    font-size: 14px;
+    color: var(--text-color-3);
+    margin-right: 6px;
+    font-weight: 500;
+}
+
+.coin-ticker {
+    font-size: 14px;
+    color: var(--text-color-3);
+    margin-right: 8px;
+    font-weight: 500;
+}
+
+.coin-rank {
+    font-size: 12px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-color-3);
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.price-row {
+    display: flex;
+    align-items: center;
+}
+
+.current-price {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-color-1-w);
+}
+
+/* X축 레이블 스타일 강화 */
+#x-axis-labels text {
+    text-anchor: middle;
+    fill: var(--text-color-3);
+    font-size: 11px;
+    font-family: 'Spoqa Han Sans Neo', sans-serif;
 }
 

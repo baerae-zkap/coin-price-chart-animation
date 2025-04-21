@@ -1,1847 +1,1119 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // fadeInPop 애니메이션 키프레임 추가
-    const styleElement = document.createElement('style');
-    styleElement.textContent = `
-        @keyframes fadeInPop {
-            0% { 
-                opacity: 0; 
-                transform: scale(0.8);
-            }
-            50% { 
-                opacity: 1; 
-                transform: scale(1.1);
-            }
-            100% { 
-                opacity: 1; 
-                transform: scale(1);
-            }
-        }
+document.addEventListener('DOMContentLoaded', function() {
+    // --- 요소 참조 ---
+    const svg = document.getElementById('price-chart');
+    const gridGroup = svg?.querySelector('.grid');
+    const linePath = document.getElementById('price-line');
+    const priceArea = document.getElementById('price-area'); // **** 추가 ****
+    const flashEffect = document.getElementById('flashEffect');
 
-        /* 카드 높이 트랜지션 부드럽게 만들기 */
-        .card.selected {
-            transition: transform 1.8s cubic-bezier(0.19, 1, 0.22, 1), 
-                        opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1),
-                        height 2s cubic-bezier(0.19, 1, 0.22, 1),
-                        z-index 0s;
-        }
+    // New Scene Elements & App Container
+    const initialStateContainer = document.getElementById('initial-state-container');
+    const historyCard = document.getElementById('history-card');
+    const holdingCard = document.getElementById('holding-card');
+    const holdingValueElement = document.getElementById('holding-value');
+    const holdingPercentageElement = document.getElementById('holding-percentage');
+    const holdingQuantityElement = document.getElementById('holding-quantity');
+    const scene2Container = document.getElementById('scene2-container');
+    const scene2Header = document.getElementById('scene2-header');
+    const scene2ChartWrapper = document.getElementById('scene2-chart-wrapper');
+    const appContainer = document.getElementById('app-container');
 
-        /* 카드 펼쳐지는 모션 더 부드럽게 */
-        .route-section {
-            transition: opacity 0.8s ease, transform 0.8s ease;
-        }
-        
-        /* 스텝 경로 요소 트랜지션 */
-        .route-step {
-            position: relative;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 0.5s ease, transform 0.5s ease;
-        }
-        
-        .route-step.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        /* 체크마크 부드러운 트랜지션 */
-        .step-icon-wrapper {
-            transition: background-color 0.5s ease, transform 0.5s ease;
-        }
-        
-        .step-icon-wrapper.checkmark {
-            transition: background-color 0.5s ease, transform 0.3s ease;
-            transform: scale(1.1);
-        }
-    `;
-    document.head.appendChild(styleElement);
+    // 환율 상수 정의 (데모용)
+    const USD_TO_KRW_RATE = 1350;
 
-    // Screen 1 Elements
-    const cardContainer = document.getElementById('card-container');
-    const countdownTextElement = document.getElementById('countdown-text');
-    const orderCompleteElement = cardContainer.querySelector('.order-complete'); // 기존 주문 완료 요소
-    const paymentCompleteElement = cardContainer.querySelector('.payment-complete'); // 새로운 결제 완료 요소
-
-    // Screen 2 Elements
-    const percentageValueElement = document.querySelector('#screen2 .percentage-value');
-    const graphLine = document.querySelector('#screen2 .graph-line');
-
-    // Screen 3 Elements
-    const screen3AmountValues = document.querySelectorAll('#screen3 .amount-value');
-
-    // Slider Elements
-    const sliderWrapper = document.getElementById('slider-wrapper');
-    let currentScreen = 0; // 0, 1, 2
-
-    // Data for the two stages
-    const coinData = {
-        'BTC': {
-            name: '',
-            price: 84000000, // 비트코인 가격 추가
-            exchanges: [
-                {
-                    name: 'Binance',
-                    iconClass: 'binance',
-                    label: 'B',
-                    savingsAmount: 42000, // 절약 금액 조정 (150000 -> 42000)
-                    price: 83850000, // 거래소별 가격 추가
-                    route: [
-                        { key: 'imbank_transfer', title: 'IM뱅크 → 케이뱅크 송금', iconClass: 'imbank' },
-                        { key: 'kbank_deposit_upbit', title: '케이뱅크 → 업비트 입금', iconClass: 'kbank' },
-                        { key: 'upbit_buy_usdt', title: '업비트: USDT 구매', iconClass: 'upbit' },
-                        { key: 'usdt_transfer_binance', title: 'USDT → 바이낸스 전송', iconClass: 'usdt' },
-                        { key: 'binance_buy_target', title: '바이낸스: BTC 구매', iconClass: 'binance' }
-                    ]
-                },
-                {
-                    name: 'Upbit',
-                    iconClass: 'upbit',
-                    label: 'U',
-                    savingsAmount: 28000, // 절약 금액 조정 (120000 -> 28000)
-                    price: 84120000, // 거래소별 가격 추가
-                    route: [
-                        { key: 'kbank_transfer_upbit', title: '케이뱅크 → 업비트 입금', iconClass: 'kbank' },
-                        { key: 'upbit_buy_target', title: `업비트: BTC 구매`, iconClass: 'upbit' }
-                    ]
-                },
-                {
-                    name: 'Coinone',
-                    iconClass: 'coinone',
-                    label: 'C',
-                    savingsAmount: 22000, // 절약 금액 조정 (80000 -> 22000)
-                    price: 84200000,
-                    route: [
-                        { key: 'kbank_transfer_coinone', title: '케이뱅크 → 코인원 입금', iconClass: 'kbank' },
-                        { key: 'coinone_buy_target', title: '코인원: BTC 구매', iconClass: 'coinone' }
-                    ]
-                },
-                {
-                    name: 'Bithumb',
-                    iconClass: 'bithumb',
-                    label: 'B',
-                    savingsAmount: 17000, // 절약 금액 조정 (50000 -> 17000)
-                    price: 84350000,
-                    route: [
-                        { key: 'kbank_transfer_bithumb', title: '케이뱅크 → 빗썸 입금', iconClass: 'kbank' },
-                        { key: 'bithumb_buy_target', title: '빗썸: BTC 구매', iconClass: 'bithumb' }
-                    ]
-                }
-            ]
-        },
-        'ETH': {
-            name: '이더리움',
-            price: 3500000,
-            exchanges: [
-                {
-                    name: 'Binance',
-                    iconClass: 'binance',
-                    label: 'B',
-                    savingsAmount: 15000, // 절약 금액 조정 (45000 -> 15000)
-                    price: 3455000,
-                    route: [
-                        { key: 'imbank_transfer', title: 'IM뱅크 → 케이뱅크 송금', iconClass: 'imbank' },
-                        { key: 'kbank_deposit_upbit', title: '케이뱅크 → 업비트 입금', iconClass: 'kbank' },
-                        { key: 'upbit_buy_usdt', title: '업비트: USDT 구매', iconClass: 'upbit' },
-                        { key: 'usdt_transfer_binance', title: 'USDT → 바이낸스 전송', iconClass: 'usdt' },
-                        { key: 'binance_buy_target', title: '바이낸스: ETH 구매', iconClass: 'binance' }
-                    ]
-                },
-                {
-                    name: 'Upbit',
-                    iconClass: 'upbit',
-                    label: 'U',
-                    savingsAmount: 12000, // 절약 금액 조정 (30000 -> 12000)
-                    price: 3470000,
-                    route: [
-                        { key: 'kbank_transfer_upbit', title: '케이뱅크 → 업비트 입금', iconClass: 'kbank' },
-                        { key: 'upbit_buy_target', title: '업비트: ETH 구매', iconClass: 'upbit' }
-                    ]
-                },
-                {
-                    name: 'Coinone',
-                    iconClass: 'coinone',
-                    label: 'C',
-                    savingsAmount: 8000, // 절약 금액 조정 (20000 -> 8000)
-                    price: 3480000,
-                    route: [
-                        { key: 'kbank_transfer_coinone', title: '케이뱅크 → 코인원 입금', iconClass: 'kbank' },
-                        { key: 'coinone_buy_target', title: '코인원: ETH 구매', iconClass: 'coinone' }
-                    ]
-                },
-                {
-                    name: 'OKX',
-                    iconClass: 'okx',
-                    label: 'O',
-                    savingsAmount: 5000, // 절약 금액 조정 (15000 -> 5000)
-                    price: 3485000,
-                    route: [
-                        { key: 'kbank_transfer_okx', title: '케이뱅크 → OKX 입금', iconClass: 'kbank' },
-                        { key: 'okx_buy_target', title: 'OKX: ETH 구매', iconClass: 'okx' }
-                    ]
-                }
-            ]
-        },
-        'BNB': {
-            name: '버추얼 프로토콜',
-            price: 560000,
-            exchanges: [
-                {
-                    name: 'Bybit',
-                    iconClass: 'bybit',
-                    label: 'B',
-                    savingsAmount: 25000, // 절약 금액 조정 (180000 -> 25000)
-                    price: 550000,
-                    route: [
-                        { key: 'imbank_transfer', title: 'IM뱅크 → 케이뱅크 보내기', iconClass: 'imbank' },
-                        { key: 'kbank_deposit_upbit', title: '케이뱅크 → 업비트 보내기', iconClass: 'kbank' },
-                        { key: 'upbit_buy_usdt', title: '업비트에서 USDT 구매', iconClass: 'upbit' },
-                        { key: 'usdt_transfer_bybit', title: 'USDT → 바이빗 보내기', iconClass: 'usdt' },
-                        { key: 'bybit_buy_target', title: 'Bybit에서 카이토 구매', iconClass: 'bybit' }
-                    ]
-                },
-                {
-                    name: 'Uniswap v2',
-                    iconClass: 'uniswap',
-                    label: 'U',
-                    savingsAmount: 20000, // 절약 금액 조정 (160000 -> 20000)
-                    price: 570000,
-                    route: [
-                        { key: 'imbank_transfer', title: 'IM뱅크 → 케이뱅크 송금', iconClass: 'imbank' },
-                        { key: 'kbbank_deposit_bithumb', title: '국민은행 → 빗썸 입금', iconClass: 'kbbank' },
-                        { key: 'bithumb_buy_usdt', title: '빗썸: USDT 구매', iconClass: 'bithumb' },
-                        { key: 'usdt_transfer_binance', title: 'USDT → Base 전송', iconClass: 'usdt' },
-                        { key: 'uniswap_buy_target', title: 'Uniswap v2: 가상화폐 구매', iconClass: 'uniswap' }
-                    ]
-                },
-                {
-                    name: 'Upbit',
-                    iconClass: 'upbit',
-                    label: 'U',
-                    savingsAmount: 15000, // 절약 금액 조정 (140000 -> 15000)
-                    price: 580000,
-                    route: [
-                        { key: 'kbank_transfer_upbit', title: '케이뱅크 → 업비트 입금', iconClass: 'kbank' },
-                        { key: 'upbit_buy_target', title: '업비트: 가상화폐 구매', iconClass: 'upbit' }
-                    ]
-                },
-                {
-                    name: 'Bitget',
-                    iconClass: 'bitget',
-                    label: 'B',
-                    savingsAmount: 12000, // 절약 금액 조정 (130000 -> 12000)
-                    price: 590000,
-                    route: [
-                        { key: 'imbank_transfer', title: 'IM뱅크 → 케이뱅크 송금', iconClass: 'imbank' },
-                        { key: 'kbank_deposit_upbit', title: '케이뱅크 → 업비트 입금', iconClass: 'kbank' },
-                        { key: 'upbit_buy_usdt', title: '업비트: USDT 구매', iconClass: 'upbit' },
-                        { key: 'usdt_transfer_bitget', title: 'USDT → Bitget 전송', iconClass: 'usdt' },
-                        { key: 'bitget_buy_target', title: 'Bitget: 가상화폐 구매', iconClass: 'bitget' }
-                    ]
-                }
-            ]
-        },
-        'SOL': {
-            name: '솔라나',
-            price: 145000,
-            exchanges: [
-                {
-                    name: 'Binance',
-                    iconClass: 'binance',
-                    label: 'B',
-                    savingsAmount: 4800, // 절약 금액 조정 (12000 -> 4800)
-                    price: 133000,
-                    route: [
-                        { key: 'imbank_transfer', title: 'IM뱅크 → 케이뱅크 송금', iconClass: 'imbank' },
-                        { key: 'kbank_deposit_upbit', title: '케이뱅크 → 업비트 입금', iconClass: 'kbank' },
-                        { key: 'upbit_buy_usdt', title: '업비트: USDT 구매', iconClass: 'upbit' },
-                        { key: 'usdt_transfer_binance', title: 'USDT → 바이낸스 전송', iconClass: 'usdt' },
-                        { key: 'binance_buy_target', title: '바이낸스: SOL 구매', iconClass: 'binance' }
-                    ]
-                },
-                {
-                    name: 'Upbit',
-                    iconClass: 'upbit',
-                    label: 'U',
-                    savingsAmount: 3500, // 절약 금액 조정 (10000 -> 3500)
-                    price: 135000,
-                    route: [
-                        { key: 'kbank_transfer_upbit', title: '케이뱅크 → 업비트 입금', iconClass: 'kbank' },
-                        { key: 'upbit_buy_target', title: '업비트: SOL 구매', iconClass: 'upbit' }
-                    ]
-                },
-                {
-                    name: 'OKX',
-                    iconClass: 'okx',
-                    label: 'O',
-                    savingsAmount: 2800, // 절약 금액 조정 (8000 -> 2800)
-                    price: 137000,
-                    route: [
-                        { key: 'kbank_transfer_okx', title: '케이뱅크 → OKX 입금', iconClass: 'kbank' },
-                        { key: 'okx_buy_target', title: 'OKX: SOL 구매', iconClass: 'okx' }
-                    ]
-                },
-                {
-                    name: 'Bithumb',
-                    iconClass: 'bithumb',
-                    label: 'B',
-                    savingsAmount: 1500, // 절약 금액 조정 (5000 -> 1500)
-                    price: 140000,
-                    route: [
-                        { key: 'kbank_transfer_bithumb', title: '케이뱅크 → 빗썸 입금', iconClass: 'kbank' },
-                        { key: 'bithumb_buy_target', title: '빗썸: SOL 구매', iconClass: 'bithumb' }
-                    ]
-                }
-            ]
-        }
+    // Check essential elements carefully
+    const essentialElements = {
+        svg, linePath, priceArea, flashEffect, initialStateContainer, historyCard,
+        holdingCard, holdingValueElement, holdingPercentageElement, holdingQuantityElement, scene2Container,
+        scene2Header, scene2ChartWrapper, appContainer
     };
 
-    let currentCoin = 'BTC'; // Start with BTC
-
-    // Updated routeIconMap with available images and fallbacks
-    const routeIconMap = {
-        'kbank': { class: 'kbank', label: 'K', image: 'images/kbank.png', name: '케이뱅크' },
-        'kbbank': { class: 'kbbank', label: 'K', image: 'images/kbbank.png', name: '국민은행' },
-        'upbit': { class: 'upbit', label: 'U', image: 'images/upbit.png', name: '업비트' },
-        'binance': { class: 'binance', label: 'B', image: 'images/binance.png', name: '바이낸스' },
-        'imbank': { class: 'imbank', label: 'I', image: 'images/imbank.png', name: 'IM뱅크' },
-        'okx': { class: 'okx', label: 'O', image: 'images/okx.png', name: 'OKX' },
-        'coinone': { class: 'coinone', label: 'C', image: 'images/coinone.png', name: '코인원' },
-        'bithumb': { class: 'bithumb', label: 'B', image: 'images/bithumb.png', name: '빗썸' },
-        'bybit': { class: 'bybit', label: 'B', image: 'images/bybit.jpg', name: '바이빗' },
-        'uniswap': { class: 'uniswap', label: 'U', image: 'images/uniswap.png', name: 'Uniswap' },
-        'bitget': { class: 'bitget', label: 'B', image: 'images/bitget.png', name: 'Bitget' },
-        'usdt': { class: 'usdt', label: 'U', image: 'images/usdt.png', name: 'USDT' },
-        'pancake': { class: 'pancake', label: 'P', image: 'images/pancake.png', name: 'Pancake' },
-        // Fallback icons/labels for actions if needed, otherwise they use exchange icons via iconClass
-        // 'transfer': { class: 'transfer', label: '→', name: '전송' },
-        // 'buy': { class: 'buy', label: '$', name: '구매' },
-    };
-
-    let cardElements = [];
-    let updateTimeoutId = null; // Changed from intervalId
-    let countdownTimeoutId = null; // Changed from countdownIntervalId
-    let selectCardTimeoutId = null; // Timeout for selecting card
-    let countdown = 5; // Countdown set to 5 seconds (was 3)
-    const animationDelay = 400; // ms, 카드 간 애니메이션 시간차
-    // const transitionDuration = 1400; // ms, JS 타임아웃 지연 시간 - updateCards에서만 사용됨
-    // let cardUpdateCycleStarted = false; // Flag removed
-
-    // 수량 포맷팅 함수 추가
-    function formatQuantity(price) {
-        // 100만원으로 구매 가능한 코인 수량 계산
-        // 실제 가격이 1,078.93원이라고 가정할 때의 비율로 계산
-        const basePrice = 1078.93;
-        const baseAmount = 1000000; // 100만원
-        
-        // 거래소 가격이 낮을수록 더 많은 코인을 구매할 수 있음
-        const quantity = baseAmount / price;
-        
-        // 소수점 둘째 자리까지 표시하고 천 단위 쉼표 포맷팅
-        return quantity.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    let missingElementKey = null;
+    for (const key in essentialElements) {
+        if (key !== 'gridGroup' && !essentialElements[key]) {
+            missingElementKey = key;
+            break;
+        }
     }
 
-    // 기존 formatAmount 함수 유지
-    function formatAmount(amount) {
-        return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    if (missingElementKey) {
+        const errorMsg = `필수 HTML 요소 '<code>${missingElementKey}</code>'를 찾을 수 없습니다. ID나 HTML 구조를 확인하세요.`;
+        console.error(errorMsg);
+        if (appContainer) {
+            appContainer.innerHTML = `<p style="color: red; text-align: center; margin-top: 50px;">오류: ${errorMsg} 애니메이션을 시작할 수 없습니다.</p>`;
+        } else {
+             alert("페이지 로딩 오류: 필수 요소를 찾을 수 없습니다.");
+        }
+        return;
+    }
+    if (!gridGroup) {
+        console.warn("SVG grid group ('.grid')을 찾을 수 없습니다. 그리드가 표시되지 않을 수 있습니다.");
     }
 
-    // 숫자 롤링 애니메이션 함수
-    function animateCountUp(element, endValue, duration = 1400, isPercentage = false) {
-        if (!element) return;
-        
-        // 입력값이 숫자형이 아니면 변환 시도
-        if (typeof endValue !== 'number') {
-            endValue = parseFloat(endValue.toString().replace(/[^\d.-]/g, ''));
-        }
-        
-        // 변환에 실패하면 처리 중단
-        if (isNaN(endValue)) {
-            console.error('animateCountUp received invalid endValue:', endValue);
-            return;
-        }
-        
-        // 시작 값도 숫자로 변환 시도
-        let startValue = 0;
-        if (element.textContent) {
-            startValue = parseFloat(element.textContent.replace(/[^\d.-]/g, '')) || 0;
-        }
-        
-        // 변화가 없으면 애니메이션 스킵
-        if (startValue === endValue) {
-            return;
-        }
-        
-        const startTime = performance.now();
-        
-        function step(timestamp) {
-            // 진행 시간 계산
-            const elapsed = timestamp - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            
-            // easeOutExpo 애니메이션 곡선 적용 - 급격히 시작하여 부드럽게 종료
-            const easedProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-            
-            // 현재 값 계산
-            const currentValue = startValue + (endValue - startValue) * easedProgress;
-            
-            // 요소가 price-info 클래스를 가진 경우 수량으로 표시
-            if (element.classList.contains('price-info')) {
-                element.textContent = `${formatQuantity(currentValue)}개`;
-            } 
-            // 일반적인 경우 (절약 금액 등)
-            else {
-                element.textContent = isPercentage ? 
-                    `${currentValue.toFixed(1)}%` : 
-                    formatAmount(Math.round(currentValue));
-            }
-            
-            // 애니메이션 완료 여부 확인
-            if (progress < 1) {
-                requestAnimationFrame(step);
+    // --- 전역 변수 ---
+    let chartWidth = 0;
+    let chartHeight = 0;
+    let animationFrameId = null;
+    let lastTimestamp = 0;
+    let timeAccumulator = 0; // 전체 애니메이션 경과 시간 추적용
+    let dataTimeAccumulator = 0; // 데이터 업데이트 시점 결정용 누적 시간
+    let currentPhase = 'IDLE'; // IDLE -> STAGE1_DISPLAY -> TRANSITION_TO_CHART -> CHART_ANIMATING -> TRANSITION_TO_FOCUS -> FOCUSED
+    const initialInvestmentValue = 1000000; // 초기 투자 금액 (원)
+    const initialTokenQuantity = 15000; // 초기 보유 토큰 수량 (예시)
+    // 거래소 상장 시점 설정 (애니메이션 전체 시간 기준의 비율, 0.0~1.0)
+    const listingPointRatio = 0.4; // 애니메이션 진행의 40% 지점에 상장 표시
+    let listingLineElement = null; // 상장 라인 요소 참조
+    let listingLabelElement = null; // 상장 레이블 요소 참조
+
+    // --- 타이밍 및 설정값 ---
+    const autoStartDelay = 1500; // 자동 시작 지연 시간 증가
+    const historyFadeDuration = 500; // 히스토리 카드 사라지는 시간 (CSS transition과 일치)
+    const cardMoveDuration = 700; // 보유 카드 이동 시간 (CSS transition과 일치)
+    const chartAppearDelay = 300; // 차트 나타나는 지연 (카드 이동 시작 후)
+    const refocusDelay = 500;    // 차트 사라진 후 카드 포커싱 지연
+
+    // --- 데이터 관련 변수 ---
+    let dataIndex = 0;
+    let activeData = [];
+    let fullData = []; // 이제 static 데이터로 채워짐
+    let chartData = []; // timestamp와 price 포함한 전체 데이터
+    let currentMinValue = 0;
+    let currentMaxValue = 0;
+    let targetMinValue = 0;
+    let targetMaxValue = 0;
+    let priceStart = 0; // 실제 데이터 로드 후 설정됨
+    let pricePeak = 0; // 실제 데이터 로드 후 설정됨
+    let actualMaxRoiPercentage = 0; // 실제 데이터 로드 후 설정됨
+    let visibleDataPoints = 30; // 기본값, 데이터 로드 후 재설정될 수 있음
+    let updateInterval = 50; // 애니메이션 속도 증가 (기존 80ms)
+    let curveTension = 0.5;
+    let totalChartDuration = 0; // 데이터 로드 후 계산됨
+    let listingPointIndex = 0; // 데이터 로드 후 계산됨
+    let initialDuration = 0; // 데이터 로드 후 계산됨
+
+    // --- 데이터 보간 함수 ---
+    function interpolateData(originalData, intervalMinutes = 5) {
+        const interpolatedData = [];
+        if (originalData.length < 2) return originalData; // 보간할 데이터 부족
+
+        for (let i = 0; i < originalData.length - 1; i++) {
+            const p1 = originalData[i];
+            const p2 = originalData[i + 1];
+
+            interpolatedData.push(p1); // 시작점 추가
+
+            const timeDiff = p2.timestamp.getTime() - p1.timestamp.getTime();
+            const priceDiff = p2.price - p1.price;
+            const numIntervals = Math.round(timeDiff / (intervalMinutes * 60 * 1000));
+
+            if (numIntervals <= 1) continue; // 이미 간격이 충분히 짧으면 건너뜀
+
+            for (let j = 1; j < numIntervals; j++) {
+                const ratio = j / numIntervals;
+                const newTimestamp = new Date(p1.timestamp.getTime() + timeDiff * ratio);
+                const newPrice = p1.price + priceDiff * ratio;
+                // 약간의 노이즈 추가 (옵션)
+                // const noise = (Math.random() - 0.5) * priceDiff * 0.05;
+                // interpolatedData.push({ timestamp: newTimestamp, price: newPrice + noise });
+                 interpolatedData.push({ timestamp: newTimestamp, price: newPrice });
             }
         }
-        
-        requestAnimationFrame(step);
+        interpolatedData.push(originalData[originalData.length - 1]); // 마지막 점 추가
+        console.log(`[Interpolate] Original: ${originalData.length} -> Interpolated: ${interpolatedData.length} points`);
+        return interpolatedData;
     }
 
-    // Restore createCardElement to include animated-route div
-    function createCardElement(exchange, cardId, coinSymbol) {
-        const card = document.createElement('div');
-        card.id = cardId;
-        
-        // 거래소 이름을 소문자로 변환하여 클래스 이름으로 사용
-        const exchangeNameLower = exchange.name.toLowerCase().replace(/\s+/g, '-');
-        card.className = `card card-${exchangeNameLower} hidden-below`;
-        
-        card.dataset.route = JSON.stringify(exchange.route);
-        card.dataset.exchangeName = exchange.name;
-        // price 데이터 속성 추가
-        card.dataset.price = exchange.price;
-        card.dataset.coinSymbol = coinSymbol;
-        // 카드 높이 직접 설정 코드 제거 - 첫 단계에서는 기본 높이 유지
+    // --- 상장 전 급등 효과 추가 함수 ---
+    function addPreListingSurge(data, listingIndex, surgeDurationMinutes = 60, surgeFactor = 1.5) {
+        const intervalMinutes = 5; // 보간 간격과 일치해야 함
+        const surgeDurationPoints = surgeDurationMinutes / intervalMinutes;
+        const surgeStartIndex = Math.max(0, listingIndex - surgeDurationPoints);
 
-        const exchangeIconInfo = routeIconMap[exchange.iconClass] || { class: exchange.iconClass, label: exchange.label };
-        const headerIconLabel = exchangeIconInfo.label || exchange.label || exchange.name.substring(0,1);
-        const exchangeLogoContent = exchangeIconInfo.image
-            ? `<img src="${exchangeIconInfo.image}" alt="${exchange.name} logo">`
-            : `<span class="icon-placeholder">${headerIconLabel}</span>`;
+        if (surgeStartIndex >= listingIndex - 1 || surgeStartIndex < 0) {
+             console.warn("[Surge] Cannot add surge, duration or index invalid.");
+             return data; // 급등 구간이 너무 짧거나 인덱스 오류
+        }
 
-        const staticRouteIconsHTML = exchange.route
-             .filter(step => (step.iconClass || step.key) !== 'tether') // Keep filter just in case
-             .slice(0, 5)
-             .map((step, index) => {
-                  const iconKey = step.iconClass || step.key;
-                  const iconInfo = routeIconMap[iconKey];
-                  const fallbackLabel = iconKey.substring(0,1).toUpperCase();
-                  const iconContent = iconInfo && iconInfo.image
-                      ? `<img src="${iconInfo.image}" alt="${iconKey}" style="width: 24px; height: 24px; object-fit: contain; display: block;">`
-                      : `<span class="icon-placeholder" style="width: 24px; height: 24px; display: flex; justify-content: center; align-items: center;">${(iconInfo && iconInfo.label) || fallbackLabel}</span>`;
-                  return `<div class="route-icon ${ (iconInfo && iconInfo.class) || 'default'}" style="z-index: ${index + 1};">${iconContent}</div>`;
-             }).join('');
 
-        // 첫 번째 카드인 경우 최저가 라벨 추가
-        const isFirstCard = cardId === 'card1';
-        const lowestPriceLabel = isFirstCard ? '<span class="lowest-price-label" style="background-color:#1d74ff; color:white; font-size:12px; padding:4px 8px; border-radius:6px; margin-left: 10px; opacity: 0.9; transition: opacity 1.2s ease;">최저가</span>' : '';
-        
-        // 100만원 기준 구매 가능 수량 계산
-        const quantity = formatQuantity(exchange.price);
-        
-        // 동일한 레이아웃 사용하되, 첫 번째 카드만 아낀 금액 표시
-        card.innerHTML = `
-            <div class="card-layout" style="display:flex; flex-direction:column; height:100%;">
-                <!-- 헤더 영역 -->
-                <div class="card-header" style="flex-shrink:0; margin-bottom:0;">
-                    <div class="exchange-info"> 
-                         <div class="exchange-icon ${exchangeIconInfo.class}">${exchangeLogoContent}</div>
-                         <div class="exchange-name">${exchange.name}${lowestPriceLabel}</div>
-                    </div>
-                     <div class="route-icons static-route-icons">
-                         ${staticRouteIconsHTML}
-                     </div>
-                </div>
-                
-                <!-- 가격 정보 영역 -->
-                <div class="price-section" style="margin-top:${isFirstCard ? '5' : '10'}px; text-align:left; flex-shrink:0; margin-bottom:0;">
-                    <div class="price-info" style="font-size:20px; font-weight:bold;">${quantity}개</div>
-                    ${isFirstCard ? `<div class="amount-saved" style="font-size:14px; color:#666; margin-top:35px; visibility:visible;">최대 <span class="amount-value">${formatAmount(exchange.savingsAmount)}</span>원 절약해요</div>` : ''}
-                </div>
-                
-                <!-- 경로 정보 영역 - 스크롤 없이 표시, 음수 마진으로 위로 당김 -->
-                <div class="route-section" style="flex-grow:0; position:relative; margin-top:-25px; ${!isFirstCard ? 'display:none;' : ''}">
-                    <div class="animated-route" style="padding-top:0;"></div>
-                </div>
-            </div>
-        `;
+        const basePrice = data[surgeStartIndex].price;
+        // 급등 직전(listingIndex-1)의 원래 보간된 가격을 기준으로 계산
+        const originalTargetPrice = data[listingIndex - 1].price;
+        const priceDiff = originalTargetPrice - basePrice;
 
-        requestAnimationFrame(() => {
-            const amountElement = card.querySelector('.amount-value');
-            if (amountElement) { amountElement.textContent = formatAmount(0); }
+        if (priceDiff <= 0) {
+             console.warn("[Surge] Cannot add surge, price difference is not positive.");
+             return data; // 가격 차이가 없거나 음수면 급등 효과 추가 불가
+        }
+
+
+        console.log(`[Surge] Adding surge from index ${surgeStartIndex} to ${listingIndex - 1}. Base: ${basePrice.toFixed(2)}, Target: ${originalTargetPrice.toFixed(2)}`);
+
+        for (let i = surgeStartIndex + 1; i < listingIndex; i++) {
+            const progress = (i - surgeStartIndex) / (listingIndex - 1 - surgeStartIndex); // 0 ~ 1 사이 진행률
+             // Ease-in-out quadratic easing function
+             const easeInOutQuad = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+             const easedProgress = easeInOutQuad(progress); // 가속/감속 효과 적용
+
+            // 가격 상승폭을 easedProgress 에 비례하게 적용
+            const surgedPrice = basePrice + priceDiff * easedProgress * surgeFactor;
+
+            // 원래 가격보다 낮아지지 않도록 보정
+            data[i].price = Math.max(data[i].price, surgedPrice);
+             // console.log(`[Surge] Index ${i}: Progress ${progress.toFixed(2)}, Eased ${easedProgress.toFixed(2)}, Price ${data[i].price.toFixed(2)}`);
+        }
+
+        return data;
+    }
+
+    // --- 데이터 로드 및 처리 ---
+    function loadAndProcessData() {
+        // --- 새로운 합성 rawData (2025-02-20 ~ 2025-02-28) ---
+        const rawData = `
+2025-02-20 12:00:00+00:00	1.45
+2025-02-20 18:00:00+00:00	1.42
+2025-02-21 00:00:00+00:00	1.40
+2025-02-21 06:00:00+00:00	1.38
+2025-02-21 12:00:00+00:00	1.35
+2025-02-21 18:00:00+00:00	1.39
+2025-02-22 00:00:00+00:00	1.41
+2025-02-22 06:00:00+00:00	1.40
+2025-02-22 12:00:00+00:00	1.43
+2025-02-22 18:00:00+00:00	1.45
+2025-02-23 00:00:00+00:00	1.48
+2025-02-23 06:00:00+00:00	1.46
+2025-02-23 12:00:00+00:00	1.50
+2025-02-23 18:00:00+00:00	1.52
+2025-02-24 00:00:00+00:00	1.55
+2025-02-24 06:00:00+00:00	1.53
+2025-02-24 12:00:00+00:00	1.58
+2025-02-24 18:00:00+00:00	1.60
+2025-02-25 00:00:00+00:00	1.62
+2025-02-25 06:00:00+00:00	1.59
+2025-02-25 12:00:00+00:00	1.65
+2025-02-25 18:00:00+00:00	1.70
+2025-02-26 00:00:00+00:00	1.80
+2025-02-26 03:00:00+00:00	1.95
+2025-02-26 06:00:00+00:00	2.10
+2025-02-26 09:00:00+00:00	2.25
+2025-02-26 12:00:00+00:00	2.40
+2025-02-26 15:00:00+00:00	2.55
+2025-02-26 18:00:00+00:00	2.65
+2025-02-26 21:00:00+00:00	2.75
+2025-02-27 00:00:00+00:00	2.80
+2025-02-27 03:00:00+00:00	2.85
+2025-02-27 06:00:00+00:00	2.90
+2025-02-27 09:00:00+00:00	2.95
+2025-02-27 12:00:00+00:00	3.00
+2025-02-27 15:00:00+00:00	3.03
+2025-02-27 18:00:00+00:00	3.05
+2025-02-27 21:00:00+00:00	3.00
+2025-02-28 00:00:00+00:00	2.95
+`.trim();
+        // --- 합성 rawData 끝 ---
+
+        // 5분 단위 데이터 파싱 (탭으로 구분) -> 이제 위 rawData(6시간/3시간 간격) 사용
+        const parsedData = rawData.split('\n').map(line => {
+            const parts = line.split('\t');
+            if (parts.length >= 2) {
+                const timestamp = new Date(parts[0]);
+                const price = parseFloat(parts[1]);
+                if (!isNaN(timestamp) && !isNaN(price)) {
+                    return { timestamp, price };
+                }
+            }
+            return null;
+        }).filter(item => item !== null);
+
+        if (parsedData.length < 2) {
+             console.error("충분한 유효 5분 데이터가 없습니다. rawData 형식을 확인하세요.");
+             return false;
+        }
+
+        // --- 데이터 스케일링 제거 --- 
+        // const scaleA = 1.056;
+        // const scaleB = 0.189;
+        // const scaledData = parsed5MinData.map(item => ({
+        //     ...item,
+        //     price: Math.max(0, scaleA * item.price + scaleB) // Ensure price doesn't go below 0
+        // }));
+        // console.log(`[Data Scale] Applied linear scaling: price = ${scaleA} * original_price + ${scaleB}`);
+        // --- 스케일링 제거 끝 ---
+
+        // 15분 간격 데이터 필터링 (파싱된 데이터 사용, 스케일링 제거됨)
+        // 참고: 이제 원본 데이터 간격이 길어서 15분 필터링하면 데이터가 거의 안 남을 수 있음.
+        //       필터링 대신 보간을 사용하거나, 필터링 기준을 조정해야 할 수 있음.
+        //       우선 15분 필터링 유지하고 결과 확인
+        const filteredChartData = parsedData.filter(item => {
+            const minutes = item.timestamp.getMinutes();
+            return minutes % 15 === 0;
         });
-        return card;
+
+        if (filteredChartData.length < 2) {
+             console.error("15분 간격으로 필터링 후 데이터가 너무 적습니다.");
+             // 필터링 없이 원본 5분 데이터 사용 고려 (선택 사항)
+             // chartData = parsed5MinData;
+             // console.warn("Using original 5-minute data due to insufficient filtered data.");
+             return false; // 필터링 실패 시 중단
+        }
+        console.log(`[Data Filter] Original 5min: ${parsedData.length} -> Filtered 15min: ${filteredChartData.length} points`);
+
+
+        // 데이터 보간 함수 호출 제거
+        // let interpolatedChartData = interpolateData(originalChartData, 15);
+
+        // 상장 시점 계산 (필터링된 15분 데이터 기준)
+        // listingPointRatio 방식 대신 특정 날짜(2025-02-26 00:00:00) 기준으로 찾기
+        const listingTimestampTarget = new Date('2025-02-26T00:00:00Z').getTime();
+        listingPointIndex = filteredChartData.findIndex(d => d.timestamp.getTime() >= listingTimestampTarget);
+        if (listingPointIndex === -1) {
+             // 해당 타임스탬프가 없으면 중간 지점 사용 (fallback)
+             listingPointIndex = Math.floor(filteredChartData.length / 2);
+             console.warn("[Data Init] Listing timestamp not found exactly, using middle point as fallback.");
+        } else {
+             console.log(`[Data Init] Calculated Listing Point Index based on timestamp: ${listingPointIndex}`);
+        }
+        // listingPointIndex = Math.floor(filteredChartData.length * listingPointRatio); // 기존 방식 제거
+
+        // 상장 전 급등 효과 추가 (필터링된 데이터에 적용)
+        // 급등 시작점을 listingPointIndex 기준으로 조정 (예: listingPointIndex - 4)
+        chartData = addPreListingSurge(filteredChartData, listingPointIndex, 60, 1.8); // 마지막 1시간, 1.8배 가속 유지 (효과 확인 필요)
+
+        // 최종 데이터 및 관련 변수 설정 (chartData는 급등 적용된 필터링 데이터)
+        fullData = chartData.map(d => d.price);
+        priceStart = chartData[0].price;
+        pricePeak = Math.max(...fullData);
+        actualMaxRoiPercentage = Math.max(0, Math.round(((pricePeak - priceStart) / priceStart) * 100));
+        console.log(`[Data Init] Using FILTERED(15min) & SURGED data. Length: ${chartData.length}, Start: ${priceStart.toFixed(2)}, Peak: ${pricePeak.toFixed(2)}, Actual Max ROI: ${actualMaxRoiPercentage}%`);
+        console.log(`[Data Init] Listing Point Index: ${listingPointIndex}`);
+
+        // 애니메이션 관련 시간 변수 재계산 (데이터 길이 변경됨)
+        visibleDataPoints = 30; // 유지
+        updateInterval = 50; // 유지
+        curveTension = 0.5; // 유지
+
+        totalChartDuration = (chartData.length > visibleDataPoints)
+                                 ? (chartData.length - visibleDataPoints) * updateInterval
+                                 : 0;
+        initialDuration = listingPointIndex * updateInterval;
+
+        console.log(`[Data Init] visiblePoints: ${visibleDataPoints}, updateInterval: ${updateInterval}ms, totalDuration: ${totalChartDuration}ms, initialDuration: ${initialDuration}ms`);
+        return true; // 데이터 로드 및 처리 성공
     }
 
-    // Restore animateRoute function to run inside cardElement
-    function animateRoute(cardElement) {
-        console.log(`animateRoute called for card: ${cardElement.id}`);
-        const routeContainer = cardElement.querySelector('.animated-route');
-        const staticIconsContainer = cardElement.querySelector('.static-route-icons');
-        if (!routeContainer) {
-            console.error("animateRoute exiting: .animated-route not found inside", cardElement.id);
-            return;
-        }
-        if (staticIconsContainer) { staticIconsContainer.style.display = 'none'; }
-        
-        routeContainer.innerHTML = '';
-        const route = JSON.parse(cardElement.dataset.route || '[]');
 
-        // 주문 완료 단계 추가
-        const completeStep = {
-            iconClass: 'checkmark',
-            key: 'order_complete',
-            title: '주문 완료!'
-        };
-        route.push(completeStep);
+    // --- 데이터 초기화 함수 수정 ---
+    function initializeData() {
+        try {
+            // fullData는 이미 chartData에서 로드됨
+            if (fullData.length === 0) {
+                console.error("Full data is empty, cannot initialize.");
+                return false; // 데이터 없으면 초기화 실패
+            }
+            activeData = fullData.slice(0, visibleDataPoints);
+            // 데이터가 visibleDataPoints보다 적으면 앞부분을 첫 데이터로 채움
+            while (activeData.length < visibleDataPoints && activeData.length > 0 && fullData.length > 0) {
+                 // fullData의 첫번째 값을 사용하거나, priceStart를 사용
+                 activeData.unshift(fullData[0] ?? priceStart);
+            }
+             // activeData가 비어있는 예외 케이스 처리
+             if (activeData.length === 0 && fullData.length > 0) {
+                 activeData = Array(visibleDataPoints).fill(fullData[0] ?? priceStart);
+                 console.warn("Active data was empty, filled with initial value.");
+             }
 
-        // 각 단계별 요소 생성
-        route.forEach((step, index) => {
-            const iconKey = step.iconClass || step.key;
 
-            // Skip if no key or special skip condition
-            if (!iconKey) return;
+            dataIndex = Math.min(visibleDataPoints, fullData.length); // 다음 로드할 데이터 인덱스
 
-            const stepElement = document.createElement('div');
-            stepElement.classList.add('route-step');
-            
-            // 처음부터 스타일 적용 - 개선된 트랜지션
-            stepElement.style.opacity = '0.5';
-            stepElement.style.transform = 'translateY(10px)';
-            stepElement.style.transition = 'opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-
-            // Determine icon content based on step type
-            let iconContent = '';
-            let iconWrapperClass = '';
-            
-            const iconInfo = routeIconMap[iconKey];
-            const fallbackLabel = iconKey.substring(0, 1).toUpperCase();
-
-            if (iconKey === 'checkmark') {
-                // 체크마크 단계 (주문 완료) - 초기에는 일반 스타일(회색)로 시작
-                iconContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="7 13 10.5 16 17 9"></polyline>
-                </svg>`;
-                // 'complete' 클래스 제거 - 기본 스타일(회색)로 시작
-                iconWrapperClass = '';
+            if (activeData.length > 0) {
+                const iB = getDataBounds(activeData);
+                currentMinValue = iB.min;
+                currentMaxValue = iB.max;
+            targetMinValue = currentMinValue;
+            targetMaxValue = currentMaxValue;
             } else {
-                // 일반 아이콘 단계 (거래소, 지갑 등)
-                iconContent = iconInfo && iconInfo.image
-                    ? `<img src="${iconInfo.image}" alt="${iconKey}" style="width: 24px; height: 24px; object-fit: contain; display: block;">`
-                    : `<span class="icon-placeholder" style="width: 24px; height: 24px; display: flex; justify-content: center; align-items: center;">${(iconInfo && iconInfo.label) || fallbackLabel}</span>`;
-                iconWrapperClass = (iconInfo && iconInfo.class) || 'default';
+                console.error("초기 activeData가 비어있습니다!");
+                 currentMinValue = priceStart * 0.9;
+                 currentMaxValue = priceStart * 1.1;
+            targetMinValue = currentMinValue;
+            targetMaxValue = currentMaxValue;
+            }
+            console.log(`[Data Init] Initialized. Active data length: ${activeData.length}, dataIndex: ${dataIndex}`);
+            return true; // 초기화 성공
+        } catch (e) {
+            showError(`데이터 초기화 오류: ${e.message}`);
+            return false; // 초기화 실패
+        }
+    }
+
+    // --- 수익률 카드 업데이트 함수 수정 ---
+    function updateHoldingCard(currentDataPoint) {
+        // priceStart가 업데이트 되었으므로 계산 방식은 유효함
+        if (!currentDataPoint || isNaN(currentDataPoint) || priceStart <= 0) { // priceStart 0 이하일 때 오류 방지
+             // 안전한 기본값 또는 현재 값 사용
+             currentDataPoint = activeData.length > 0 ? activeData[activeData.length - 1] : (priceStart > 0 ? priceStart : 1);
+        }
+
+        // currentPercentage 계산 시 새로운 priceStart 사용됨
+         const currentPercentage = priceStart > 0
+             ? Math.max(0, Math.round(((currentDataPoint - priceStart) / priceStart) * 100))
+             : 0; // priceStart가 0이면 수익률 0
+        const currentValue = Math.round(initialInvestmentValue * (1 + currentPercentage / 100));
+        const profitAmount = Math.max(0, currentValue - initialInvestmentValue);
+
+        holdingValueElement.textContent = `${formatNumber(currentValue)}원`;
+        holdingPercentageElement.textContent = `(+${currentPercentage}%, +${formatNumber(profitAmount)}원)`;
+
+        if (currentPercentage > 0) {
+            holdingPercentageElement.classList.add('positive');
+        } else {
+            holdingPercentageElement.textContent = `(+0%, +0원)`;
+            holdingPercentageElement.classList.remove('positive');
+        }
+    }
+
+    // --- 헬퍼 함수 ---
+    function formatNumber(num) { return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+    function showError(message) { console.error(message); }
+    function setChartDimensions() { try{const rect = svg.getBoundingClientRect();if(!rect || rect.width<=0)return false;chartWidth=rect.width;const containerHeight = scene2ChartWrapper?.querySelector('.chart-container')?.clientHeight;chartHeight=containerHeight>0?containerHeight:200;svg.setAttribute('viewBox',`0 0 ${chartWidth} ${chartHeight}`);return true;}catch(e){showError(`차트 크기 설정 오류: ${e.message}`);return false;}}
+    function drawGrid() { if(chartWidth===0||chartHeight===0)return;try{gridGroup.innerHTML='';const h=5,v=6;for(let i=0;i<=h;i++){const y=(i/h)*chartHeight,l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1','0');l.setAttribute('y1',String(y));l.setAttribute('x2',String(chartWidth));l.setAttribute('y2',String(y));gridGroup.appendChild(l);}for(let i=0;i<=v;i++){const x=(i/v)*chartWidth,l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',String(x));l.setAttribute('y1','0');l.setAttribute('x2',String(x));l.setAttribute('y2',String(chartHeight));gridGroup.appendChild(l);}}catch(e){showError(`그리드 그리기 오류: ${e.message}`);} }
+    function scaleY(value, minValue, maxValue) { if(maxValue<=minValue)return chartHeight/2;const r=Math.max(maxValue-minValue,.01),sY=chartHeight-((value-minValue)/r)*chartHeight;return Math.max(0,Math.min(chartHeight,sY));}
+    function getControlPoints(p0, p1, p2, p3, tension) { const t=tension,cp1x=p1.x+(p2.x-p0.x)/6*t,cp1y=p1.y+(p2.y-p0.y)/6*t,cp2x=p2.x-(p3.x-p1.x)/6*t,cp2y=p2.y-(p3.y-p1.y)/6*t;return[{x:cp1x,y:cp1y},{x:cp2x,y:cp2y}];}
+    
+    // **** generateCurvedPath 수정: line과 area 경로 객체 반환 ****
+    function generateCurvedPath(data, minValue, maxValue, tension) {
+        if (!data || data.length < 2 || chartWidth === 0 || chartHeight === 0) return { line: '', area: '' }; 
+        try {
+            const pts = data.map((d, i) => ({ x: (i / (visibleDataPoints - 1)) * chartWidth, y: scaleY(d === null ? (data[i - 1] ?? data[i + 1] ?? minValue) : d, minValue, maxValue) }));
+            let lineP = `M ${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`;
+            for (let i = 0; i < pts.length - 1; i++) {
+                const p0 = pts[i === 0 ? 0 : i - 1], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+                const [cp1, cp2] = getControlPoints(p0, p1, p2, p3, tension);
+                lineP += ` C ${cp1.x.toFixed(2)},${cp1.y.toFixed(2)} ${cp2.x.toFixed(2)},${cp2.y.toFixed(2)} ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`;
             }
 
-            // 연결선 스타일 정의
-            const lineStyle = index < route.length - 1 ? 
-                `<div class="step-line" style="position: absolute; left: 50%; transform: translateX(-50%) scaleY(0); transform-origin: top; width: 2px; height: 24px; background-color: var(--border-color-2); transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);"></div>` : '';
+            // Area path generation
+            let areaP = lineP; 
+            if (pts.length > 1) {
+                areaP += ` L ${pts[pts.length - 1].x.toFixed(2)} ${chartHeight}`; 
+                areaP += ` L ${pts[0].x.toFixed(2)} ${chartHeight}`; 
+                areaP += ' Z'; 
+            }
+            return { line: lineP, area: areaP };
+        } catch (e) {
+            showError(`곡선 경로 생성 오류: ${e.message}`);
+            return { line: '', area: '' };
+        }
+    }
+    
+    function getDataBounds(data) { const vV=data.filter(d=>d!==null&&typeof d==='number'&&!isNaN(d));if(vV.length===0)return{min:priceStart*.95,max:priceStart*1.05};const min=Math.min(...vV),max=Math.max(...vV),pad=Math.max((max-min)*.1,.05);return{min:Math.max(0,min-pad),max:max+pad};}
 
-            stepElement.innerHTML = `
-                <div class="step-indicator" style="position: relative;">
-                    <div class="step-icon-wrapper ${iconWrapperClass}" style="transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);">${iconContent}</div>
-                    ${lineStyle}
+    // **** generateFullStaticPath 수정: line과 area 경로 객체 반환 ****
+    function generateFullStaticPath(fullChartData, minValue, maxValue, tension) {
+        if (!fullChartData || fullChartData.length < 2 || chartWidth === 0 || chartHeight === 0) return { line: '', area: '' };
+        try {
+            const dataLength = fullChartData.length;
+            const pts = fullChartData.map((price, i) => ({
+                x: (i / (dataLength - 1)) * chartWidth, 
+                y: scaleY(price, minValue, maxValue)
+            }));
+            let lineP = `M ${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`;
+            for (let i = 0; i < pts.length - 1; i++) {
+                const p0 = pts[i === 0 ? 0 : i - 1];
+                const p1 = pts[i];
+                const p2 = pts[i + 1];
+                const p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+                const [cp1, cp2] = getControlPoints(p0, p1, p2, p3, tension);
+                lineP += ` C ${cp1.x.toFixed(2)},${cp1.y.toFixed(2)} ${cp2.x.toFixed(2)},${cp2.y.toFixed(2)} ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`;
+            }
+
+            // Area path generation for static chart
+            let areaP = lineP;
+            if (pts.length > 1) {
+                areaP += ` L ${pts[pts.length - 1].x.toFixed(2)} ${chartHeight}`; 
+                areaP += ` L ${pts[0].x.toFixed(2)} ${chartHeight}`; 
+                areaP += ' Z'; 
+            }
+            return { line: lineP, area: areaP };
+        } catch (e) {
+            showError(`전체 경로 생성 오류: ${e.message}`);
+            return { line: '', area: '' };
+        }
+    }
+
+    // --- 축 레이블 그리기 함수들 ---
+    const yAxisLabelGroup = document.getElementById('y-axis-labels');
+    const xAxisLabelGroup = document.getElementById('x-axis-labels');
+
+    function drawYAxisLabels(minValue, maxValue) {
+        // 애니메이션 중이거나 초기 상태일 때는 그리지 않음
+        if (currentPhase === 'CHART_ANIMATING' || currentPhase === 'IDLE' || currentPhase === 'TRANSITION_TO_CHART') {
+            if (yAxisLabelGroup) yAxisLabelGroup.innerHTML = '';
+            return;
+        }
+
+        if (!yAxisLabelGroup || chartWidth === 0 || chartHeight === 0 || maxValue <= minValue) return;
+        yAxisLabelGroup.innerHTML = ''; // 기존 레이블 클리어
+
+        const minKRW = minValue * USD_TO_KRW_RATE;
+        const maxKRW = maxValue * USD_TO_KRW_RATE;
+        const rangeKRW = maxKRW - minKRW;
+
+        // 코인마켓캡 스타일의 'Nice' 간격 계산 (500 단위 시도)
+        const stepKRW = 500;
+
+        if (rangeKRW <= 0 || stepKRW <= 0) return; // 유효하지 않은 범위나 간격이면 중단
+
+        const startLabelKRW = Math.ceil(minKRW / stepKRW) * stepKRW;
+
+        for (let currentLabelKRW = startLabelKRW; currentLabelKRW <= maxKRW; currentLabelKRW += stepKRW) {
+            // 레이블 값(KRW)을 다시 USD로 변환하여 scaleY 함수에 사용
+            const currentLabelUSD = currentLabelKRW / USD_TO_KRW_RATE;
+            const y = scaleY(currentLabelUSD, minValue, maxValue);
+
+            // Y축 경계를 약간 벗어나는 레이블도 포함 (5 -> -5, chartHeight - 5 -> chartHeight + 5)
+            // 하지만 너무 벗어나면 제외 (예: y < -10 or y > chartHeight + 10)
+            if (y < -10 || y > chartHeight + 10) continue;
+            const clampedY = Math.max(5, Math.min(chartHeight - 5, y)); // 실제 위치는 경계 안으로 클램핑
+
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            // x 위치 계산 변경: SVG 너비(chartWidth) 대신 컨테이너 너비 기준으로 설정
+            const containerWidth = svg.parentElement?.clientWidth ?? chartWidth; // 컨테이너 너비 가져오기 (없으면 chartWidth 사용)
+            const labelX = containerWidth - 10; // 컨테이너 오른쪽 가장자리에서 10px 안쪽
+            text.setAttribute('x', labelX);
+            text.setAttribute('y', clampedY); // 클램핑된 y 위치 사용
+            text.setAttribute('dy', '0.3em'); // 텍스트 세로 정렬 보정
+            text.setAttribute('text-anchor', 'end'); // 텍스트 끝점 정렬 (오른쪽 정렬 효과)
+            // 가격 포맷팅 (원화)
+            text.textContent = `₩${formatNumber(Math.round(currentLabelKRW))}`;
+            yAxisLabelGroup.appendChild(text);
+        }
+    }
+
+    function drawXAxisLabels(isStatic = false) {
+        if (!xAxisLabelGroup || chartWidth === 0 || chartHeight === 0 || chartData.length === 0) return;
+        xAxisLabelGroup.innerHTML = ''; // 기존 레이블 클리어
+
+        // 표시할 레이블 개수 증가 (3개 -> 5개)
+        const labelCount = 5; 
+
+        if (isStatic) {
+            // 전체 데이터 기준 시간 표시 - 코인마켓캡 스타일로 수정
+            const indices = [
+                0,  // 첫 데이터
+                Math.floor((chartData.length - 1) * 0.25),  // 25% 지점
+                Math.floor((chartData.length - 1) * 0.5),   // 중간 지점
+                Math.floor((chartData.length - 1) * 0.75),  // 75% 지점
+                chartData.length - 1  // 마지막 데이터
+            ];
+            
+            indices.forEach(index => {
+                const x = (index / (chartData.length - 1)) * chartWidth;
+                const adjustedX = Math.max(15, Math.min(chartWidth - 15, x));
+                const timestamp = chartData[index]?.timestamp;
+                if (!timestamp || isNaN(timestamp.getTime())) return;
+
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', adjustedX);
+                text.setAttribute('y', chartHeight + 15);
+                
+                // 코인마켓캡 스타일 시간 포맷팅
+                let timeStr = "";
+                const hours = timestamp.getHours();
+                const minutes = timestamp.getMinutes();
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                const hour12 = hours % 12 || 12;
+                
+                // 같은 날짜면 시간만, 다른 날짜면 날짜도 표시
+                const today = new Date();
+                const isToday = timestamp.getDate() === today.getDate() && 
+                                timestamp.getMonth() === today.getMonth() &&
+                                timestamp.getFullYear() === today.getFullYear();
+                                
+                if (isToday) {
+                    timeStr = `${hour12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+                } else {
+                    // 월/일 표시 (Apr 21 형식)
+                    const month = timestamp.toLocaleString('en-US', { month: 'short' });
+                    const day = timestamp.getDate();
+                    timeStr = `${month} ${day}`;
+                }
+                
+                text.textContent = timeStr;
+                xAxisLabelGroup.appendChild(text);
+            });
+        } else {
+            // 애니메이션 중: 현재 보이는 창 기준 -> 내용을 비워서 숨김
+            xAxisLabelGroup.innerHTML = '';
+        }
+    }
+    // --- 축 레이블 그리기 함수들 끝 ---
+
+    // --- 거래소 상장 수직선 추가 함수 ---
+    function setupListingLine() {
+        const existingLine = document.querySelector('.listing-line');
+        const existingLabel = document.querySelector('.listing-label');
+        if (existingLine) existingLine.remove();
+        if (existingLabel) existingLabel.remove();
+
+        const chartContainer = document.querySelector('.chart-container');
+        if (!chartContainer) return;
+
+        listingLineElement = document.createElement('div');
+        listingLineElement.className = 'listing-line';
+
+        listingLabelElement = document.createElement('div');
+        listingLabelElement.className = 'listing-label';
+        listingLabelElement.textContent = '거래소 상장';
+
+        chartContainer.appendChild(listingLineElement);
+        chartContainer.appendChild(listingLabelElement);
+    }
+
+    // --- 차트 인터랙션 설정 ---
+    function setupChartInteraction() {
+        const chartContainer = document.querySelector('.chart-container');
+        if (!chartContainer) return;
+
+        const svgChart = document.getElementById('price-chart');
+        const crosshairV = document.getElementById('crosshair-v');
+        const crosshairH = document.getElementById('crosshair-h');
+        if (!svgChart || !crosshairV || !crosshairH) {
+            console.error("크로스헤어 라인 요소를 찾을 수 없습니다.");
+            return;
+        }
+
+        // 기존 마커/정보 있으면 제거
+        const existingMarker = chartContainer.querySelector('.point-marker');
+        if (existingMarker) existingMarker.remove();
+        const existingInfo = chartContainer.querySelector('.point-info');
+        if (existingInfo) existingInfo.remove();
+
+
+        const pointMarker = document.createElement('div');
+        pointMarker.className = 'point-marker';
+        pointMarker.style.display = 'none';
+
+        const pointInfo = document.createElement('div');
+        pointInfo.className = 'point-info';
+        pointInfo.style.display = 'none';
+
+        chartContainer.appendChild(pointMarker);
+        chartContainer.appendChild(pointInfo);
+
+        chartContainer.addEventListener('mousemove', function(e) {
+            const rect = chartContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+
+            let dataPointsAvailable;
+            let sourceData; // 가격 데이터 소스
+            let sourceTimeData; // 시간 데이터 소스
+            let firstIndexOffset = 0; // 전체 데이터 기준 offset
+
+            if (currentPhase === 'FOCUSED') {
+                dataPointsAvailable = fullData.length;
+                sourceData = fullData;
+                sourceTimeData = chartData; // 시간은 chartData 사용
+            } else if (currentPhase === 'CHART_ANIMATING') {
+                dataPointsAvailable = activeData.length;
+                sourceData = activeData;
+                sourceTimeData = chartData; // 시간은 chartData 사용
+                firstIndexOffset = Math.max(0, dataIndex - activeData.length);
+            } else {
+                return; // 다른 상태에서는 동작 안 함
+            }
+
+            if (x < 0 || x > chartWidth || dataPointsAvailable < 2) return;
+
+            // 마우스 위치에 따른 데이터 인덱스 계산
+            const indexRatio = x / chartWidth;
+            const calculatedIndex = Math.floor(indexRatio * (dataPointsAvailable - 1));
+            const actualDataIndex = Math.min(sourceTimeData.length - 1, firstIndexOffset + calculatedIndex);
+
+            if (actualDataIndex < 0 || actualDataIndex >= sourceTimeData.length) return;
+
+            const dataValue = sourceData[calculatedIndex]; // 가격은 해당 sourceData 사용
+            const timestamp = sourceTimeData[actualDataIndex].timestamp;
+
+            if (dataValue === null || isNaN(dataValue) || !timestamp || isNaN(timestamp.getTime())) return;
+
+            let finalPercentage = null;
+            if (currentPhase === 'FOCUSED' && actualDataIndex === chartData.length - 1) {
+                 finalPercentage = actualMaxRoiPercentage;
+                 // console.log(`[Interaction] Phase is FOCUSED and last point hovered. Using actual final ROI: ${finalPercentage}%`);
+            }
+
+            const minY = currentMinValue; // FOCUSED 상태에서도 마지막 min/max 사용
+            const maxY = currentMaxValue;
+            // Y 위치 계산 시 주의: FOCUSED 상태면 전체 데이터 기준 scale이어야 하지만,
+            // 현재 scaleY는 전달된 min/max 기준이므로 애니메이션 마지막 상태의 Y가 계산됨.
+            // 정적 차트 Y 위치를 정확히 계산하려면 scaleY 수정 또는 별도 계산 필요.
+            // 여기서는 일단 크로스헤어/마커 위치를 위해 현재 방식 유지.
+            const y = scaleY(dataValue, minY, maxY);
+
+
+            const percentageChange = (finalPercentage !== null)
+                ? finalPercentage
+                : (priceStart > 0 ? Math.max(0, Math.round(((dataValue - priceStart) / priceStart) * 100)) : 0);
+
+            pointMarker.style.left = `${x}px`;
+            pointMarker.style.top = `${y}px`;
+            pointMarker.style.display = 'block';
+
+            const displayPriceKRW = dataValue * USD_TO_KRW_RATE;
+            const displayDate = timestamp.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            const displayTime = timestamp.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+
+            pointInfo.innerHTML = `
+                <div class="info-line date-time-line">
+                    <span>${displayDate}</span>
+                    <span>${displayTime}</span>
                 </div>
-                <div class="step-details">
-                    <div class="step-title" style="color: var(--text-color-1-w); transition: color 0.4s ease;">${step.title}</div>
+                <div class="info-line">
+                    <span class="icon price-icon"></span>
+                    <span>가격: ₩${formatNumber(Math.round(displayPriceKRW))}</span>
+                </div>
+                <div class="info-line percentage-line">
+                     <span>(수익률: +${percentageChange}%)</span>
                 </div>
             `;
-            routeContainer.appendChild(stepElement);
-            
-            // 각 단계 요소를 순차적으로 페이드인 (개선된 이징)
-            setTimeout(() => {
-                stepElement.style.opacity = '1';
-                stepElement.style.transform = 'translateY(0)';
-            }, 150 + index * 70);
+
+            pointInfo.style.left = `${x}px`;
+             const infoWidth = pointInfo.offsetWidth;
+             const spaceRight = chartWidth - x;
+             if (spaceRight < infoWidth + 10) {
+                 pointInfo.style.transform = `translate(calc(-100% - 10px), 20px)`;
+             } else {
+                 pointInfo.style.transform = 'translate(-50%, 20px)';
+             }
+            pointInfo.style.top = `${y}px`;
+            pointInfo.style.display = 'block';
+
+            // 크로스헤어 업데이트 (FOCUSED 상태에서도 동작)
+            crosshairV.setAttribute('x1', x);
+            crosshairV.setAttribute('x2', x);
+            crosshairV.setAttribute('y1', 0);
+            crosshairV.setAttribute('y2', chartHeight);
+            crosshairV.style.display = 'block';
+
+            crosshairH.setAttribute('x1', 0);
+            crosshairH.setAttribute('x2', chartWidth);
+            crosshairH.setAttribute('y1', y);
+            crosshairH.setAttribute('y2', y);
+            crosshairH.style.display = 'block';
         });
 
-        // Animate focus moving through steps
-        const stepElements = routeContainer.querySelectorAll('.route-step');
-        let currentStepIndex = 0;
-        const stepInterval = 350; // 500ms -> 350ms로 더 빠르게
-        let stepTimeoutId = null;
-
-        function focusNextStep() {
-            // Clear previous timeout if exists
-            if (stepTimeoutId) clearTimeout(stepTimeoutId);
-
-            // 현재 단계를 활성화 및 완료 표시
-            if (currentStepIndex < stepElements.length) {
-                const currentStep = stepElements[currentStepIndex];
-                
-                // 1단계: 먼저 활성화 클래스만 추가 (아이콘 포커싱)
-                currentStep.classList.add('active');
-                
-                // 2단계: 체크마크 표시 (더 빠르게)
-                setTimeout(() => {
-                    // 체크마크로 변경
-                    const iconWrapper = currentStep.querySelector('.step-icon-wrapper');
-                    if (iconWrapper) {
-                        // 아이콘 크기 변화 애니메이션 추가
-                        iconWrapper.style.transform = 'scale(1.1)';
-                        
-                        setTimeout(() => {
-                            // PNG 이미지 대신 인라인 SVG 사용
-                            iconWrapper.innerHTML = `
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="7 13 10.5 16 17 9"></polyline>
-                                </svg>
-                            `;
-                            iconWrapper.classList.add('checkmark');
-                            
-                            // 크기 원복
-                            setTimeout(() => {
-                                iconWrapper.style.transform = 'scale(1)';
-                            }, 100);
-                        }, 100);
-                    }
-                    
-                    // 3단계: 체크마크 표시 후 완료 상태로 전환 (더 빠르게)
-                    setTimeout(() => {
-                        // 완료 클래스 추가 (선 애니메이션 시작)
-                        // 주의: 선이 먼저 나타났다 사라지지 않도록 active 클래스를 먼저 제거
-                        
-                        // 텍스트 색상을 회색으로 변경
-                        const stepTitle = currentStep.querySelector('.step-title');
-                        if (stepTitle) {
-                            stepTitle.style.color = 'var(--text-color-3)';
-                        }
-                        
-                        if (currentStepIndex < stepElements.length - 1) {
-                            // 마지막 단계가 아닐 경우에만 선 애니메이션 표시
-                            const stepLine = currentStep.querySelector('.step-line');
-                            if (stepLine) {
-                                // 선 애니메이션 실행
-                                stepLine.style.transform = 'translateX(-50%) scaleY(1)';
-                            }
-                        }
-                        
-                        // 완료 표시 클래스 추가
-                        currentStep.classList.add('completed');
-                        
-                        // 모든 단계가 완료되었는지 확인하고 스피너를 체크 아이콘으로 변경
-                        if (currentStepIndex === stepElements.length - 1) {
-                            // 마지막 단계가 완료되면 스피너를 체크 아이콘으로 변경
-                            setTimeout(() => {
-                                const kaitoIntro = document.getElementById('kaito-intro');
-                                if (kaitoIntro) {
-                                    const introTextSpan = kaitoIntro.querySelector('span');
-                                    if (introTextSpan) {
-                                        // 스피너 요소 찾기
-                                        const spinner = introTextSpan.querySelector('.loading-spinner');
-                                        if (spinner) {
-                                            // 스피너의 위치와 크기를 기억
-                                            const spinnerRect = spinner.getBoundingClientRect();
-                                            const spinnerWidth = spinnerRect.width;
-                                            const spinnerHeight = spinnerRect.height;
-                                            
-                                            // 스피너를 감싸는 컨테이너 생성
-                                            const iconContainer = document.createElement('div');
-                                            iconContainer.className = 'icon-container';
-                                            iconContainer.style.cssText = `
-                                                display: inline-block;
-                                                width: ${spinnerWidth}px;
-                                                height: ${spinnerHeight}px;
-                                                position: relative;
-                                                margin-right: 8px;
-                                                vertical-align: middle;
-                                            `;
-                                            
-                                            // 체크 아이콘 생성
-                                            const checkIcon = document.createElement('div');
-                                            checkIcon.className = 'check-icon';
-                                            checkIcon.innerHTML = `
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#5D5FEF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                                                    <polyline points="6 12 10 16 18 8"></polyline>
-                                                </svg>
-                                            `;
-                                            checkIcon.style.cssText = `
-                                                position: absolute;
-                                                left: 0;
-                                                top: 0;
-                                                width: 100%;
-                                                height: 100%;
-                                                display: flex;
-                                                align-items: center;
-                                                justify-content: center;
-                                                opacity: 0;
-                                                transition: opacity 0.3s ease;
-                                            `;
-                                            
-                                            // 텍스트 저장
-                                            const textContent = introTextSpan.textContent.replace(/^\s*[\S\s]*?최적의/, '최적의').trim();
-                                            
-                                            // 기존 스피너는 대체할 컨테이너에 추가
-                                            spinner.style.transition = 'opacity 0.3s ease';
-                                            spinner.style.opacity = '0';
-                                            
-                                            // 스피너를 컨테이너로 대체
-                                            iconContainer.appendChild(spinner);
-                                            iconContainer.appendChild(checkIcon);
-                                            
-                                            // 기존 내용 지우고 새 컨테이너와 텍스트 추가
-                                            introTextSpan.innerHTML = '';
-                                            introTextSpan.appendChild(iconContainer);
-                                            introTextSpan.appendChild(document.createTextNode(' ' + textContent));
-                                            
-                                            // 애니메이션 타이밍에 맞춰 스피너를 숨기고 체크 아이콘 표시
-                                            setTimeout(() => {
-                                                checkIcon.style.opacity = '1';
-                                            }, 300);
-                                        } else {
-                                            // 스피너가 없는 경우 새로 아이콘 생성
-                                            const iconContainer = document.createElement('div');
-                                            iconContainer.className = 'icon-container';
-                                            iconContainer.style.cssText = `
-                                                display: inline-block;
-                                                width: 16px;
-                                                height: 16px;
-                                                position: relative;
-                                                margin-right: 8px;
-                                                vertical-align: middle;
-                                            `;
-                                            
-                                            const checkIcon = document.createElement('div');
-                                            checkIcon.className = 'check-icon';
-                                            checkIcon.innerHTML = `
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#5D5FEF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                                                    <polyline points="6 12 10 16 18 8"></polyline>
-                                                </svg>
-                                            `;
-                                            checkIcon.style.cssText = `
-                                                position: absolute;
-                                                left: 0;
-                                                top: 0;
-                                                width: 100%;
-                                                height: 100%;
-                                                display: flex;
-                                                align-items: center;
-                                                justify-content: center;
-                                            `;
-                                            
-                                            iconContainer.appendChild(checkIcon);
-                                            
-                                            // 기존 내용 지우고 새 컨테이너와 텍스트 추가
-                                            introTextSpan.innerHTML = '';
-                                            introTextSpan.appendChild(iconContainer);
-                                            introTextSpan.appendChild(document.createTextNode(' 최적의 경로로 자동으로 구매해요'));
-                                        }
-                                    }
-                                }
-                            }, 500);
-                            
-                            // 최종 완료 처리
-                            showFinalCompletion(cardElement, 500); // 500ms 지연 후 최종 완료 표시
-                        } else {
-                            // 5단계: 선 애니메이션 진행 후 다음 단계로 이동 (더 빠르게)
-                            setTimeout(() => {
-                                currentStepIndex++;
-                                if (currentStepIndex < stepElements.length) {
-                                    stepTimeoutId = setTimeout(focusNextStep, 150); // 200ms -> 150ms로 더 빠르게
-                                }
-                            }, 200); // 300ms -> 200ms로 더 빠르게
-                        }
-                    }, 150); // 200ms -> 150ms로 더 빠르게
-                }, 150); // 200ms -> 150ms로 더 빠르게
-            } else {
-                console.log(`모든 단계 애니메이션 완료 감지: 카드 ${cardElement.id || '(ID 없음)'}`);
-                return; // 모든 단계 완료
-            }
-        }
-
-        // 첫 번째 단계 시작 전에 딜레이 추가 (더 빠르게)
-        setTimeout(focusNextStep, 500); // 800ms -> 500ms로 더 빠르게
-    }
-
-    // Define checkAllStepsComplete (though not strictly needed if called from focusNextStep)
-    function checkAllStepsComplete(cardElement) {
-        if (!cardElement) return false;
-        const steps = cardElement.querySelectorAll('.animated-route .route-step');
-        if (steps.length === 0) return false;
-        return Array.from(steps).every(step => step.classList.contains('completed'));
-    }
-
-    // Define showFinalCompletion function - Takes cardElement and optional delay
-    function showFinalCompletion(cardElement, delay = 0) {
-        // console.log("[showFinalCompletion] 호출됨. cardElement:", cardElement, "delay:", delay);
-        if (!cardElement || !cardElement.id) {
-            // console.error("[showFinalCompletion] 유효하지 않은 cardElement 또는 ID 없음:", cardElement);
-            return;
-        }
-
-        const cardContainer = document.getElementById('card-container');
-        if (!cardContainer) {
-            // console.error("[showFinalCompletion] card-container 찾기 실패. cardElement:", cardElement);
-            return;
-        }
-
-        // 카이토 설명 요소 가져오기
-        const kaitoIntroElement = document.getElementById('kaito-intro');
-
-        // 주문 완료 또는 결제 완료 요소를 document에서 찾음
-        const orderCompleteElement = document.querySelector('.order-complete');
-        const paymentCompleteElement = document.querySelector('.payment-complete');
-
-        if (!orderCompleteElement || !paymentCompleteElement) {
-            // console.error("[showFinalCompletion] 주문 완료 또는 결제 완료 요소를 찾을 수 없음 (document query).");
-            return;
-        }
-
-        // cardElement의 dataset에서 필요한 정보 가져오기
-        const selectedExchangePrice = parseInt(cardElement.dataset.price, 10) || 0;
-        const currentCoinSymbol = cardElement.dataset.coinSymbol || 'BTC'; // 기본값 BTC 또는 현재 코인 심볼
-        const currentCoinPrice = coinData[currentCoinSymbol] ? coinData[currentCoinSymbol].price : 0;
-        const savingsAmount = currentCoinPrice - selectedExchangePrice;
-        
-        // 100만원 기준 구매 수량 계산
-        const purchasedQuantity = formatQuantity(selectedExchangePrice);
-
-        // 결제 완료 텍스트 설정
-        const completeTextElement = paymentCompleteElement.querySelector('.complete-text');
-        
-        if (completeTextElement) {
-            completeTextElement.innerHTML = `${purchasedQuantity}개 구매 완료되었어요!`;
-        }
-
-        // 지정된 지연 후 애니메이션 시작
-        setTimeout(() => {
-            // 다른 카드 숨기기
-            document.querySelectorAll('.card:not(.selected)').forEach(card => {
-                card.classList.remove('visible');
-                card.classList.add('hidden-above');
-            });
-
-            // 선택된 카드 중앙 정렬 및 크기 조절
-            cardElement.style.transform = 'translateY(-50%) scale(1.05)';
-            cardElement.style.top = '40%';
-            cardElement.style.zIndex = '100';
-            cardElement.classList.add('final-focus');
-
-            // 주문 완료 요소 표시 (첫 번째 녹색 체크마크)
-            orderCompleteElement.style.display = 'flex'; // flex로 변경
-            orderCompleteElement.classList.remove('hidden');
-            orderCompleteElement.classList.add('show');
-
-            const checkMark = orderCompleteElement.querySelector('.final-checkmark');
-            if (checkMark) {
-                checkMark.style.opacity = '1';
-                checkMark.style.animation = 'fadeInPop 0.6s cubic-bezier(0.18, 0.89, 0.32, 1.28)';
-                
-                // 첫 번째 체크마크 애니메이션 완료 후 텍스트 및 두 번째 체크마크 표시
-                checkMark.addEventListener('animationend', function firstCheckAnimationEndHandler() {
-                    // 핸들러 제거 (한 번만 실행되도록)
-                    checkMark.removeEventListener('animationend', firstCheckAnimationEndHandler);
-                    
-                    // 주문 완료 텍스트 표시
-                    const orderTextElement = orderCompleteElement.querySelector('.order-text');
-                    if (orderTextElement) {
-                        orderTextElement.style.opacity = '1';
-                        orderTextElement.textContent = '주문 완료!';
-                    }
-                    
-                    // 결제 완료 요소도 표시 (두 번째 파란색 체크마크)
-                    setTimeout(() => {
-                        paymentCompleteElement.style.display = 'flex';
-                        paymentCompleteElement.classList.remove('hidden');
-                        paymentCompleteElement.classList.add('show');
-                        
-                        const blueCheckMark = paymentCompleteElement.querySelector('.final-checkmark-blue');
-                        if (blueCheckMark) {
-                            blueCheckMark.style.opacity = '1';
-                            blueCheckMark.style.animation = 'fadeInPop 0.6s cubic-bezier(0.18, 0.89, 0.32, 1.28)';
-                            
-                            // 두 번째 체크마크 애니메이션 완료 후 결제 완료 텍스트 표시
-                            blueCheckMark.addEventListener('animationend', function blueCheckAnimationEndHandler() {
-                                // 핸들러 제거 (한 번만 실행되도록)
-                                blueCheckMark.removeEventListener('animationend', blueCheckAnimationEndHandler);
-                                
-                                // 결제 완료 텍스트 표시
-                                if (completeTextElement) {
-                                    completeTextElement.style.opacity = '1';
-                                }
-                                
-                                // 처리 완료 후 카드 강조 표시
-                                cardElement.style.transition = 'all 0.4s ease-out';
-                                cardElement.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.12)';
-                                
-                                // 최종 스텝으로 이동
-                                handleFinalStep();
-                            });
-                        }
-                    }, 600); // 600ms 후 결제 완료 요소 표시
-                });
-            }
-        }, delay);
-    }
-
-    function selectCheapestCard() {
-        stopUpdates(); // Stop any further updates or countdowns
-        console.log("Selecting the cheapest card...");
-
-        // Ensure cardElements are up-to-date or find them again
-        const currentCards = cardContainer.querySelectorAll('.card.visible');
-        if (currentCards.length === 0) {
-            console.log("No visible cards to select from.");
-            return;
-        }
-
-        let cheapestCard = null;
-        let lowestPrice = Infinity;
-
-        currentCards.forEach(card => {
-            // data-price 속성으로 가격 비교
-            const priceValue = parseInt(card.dataset.price, 10);
-
-            if (!isNaN(priceValue) && priceValue < lowestPrice) {
-                lowestPrice = priceValue;
-                cheapestCard = card;
-            }
+        chartContainer.addEventListener('mouseleave', function() {
+            pointMarker.style.display = 'none';
+            pointInfo.style.display = 'none';
+            crosshairV.style.display = 'none';
+            crosshairH.style.display = 'none';
         });
+    }
 
-        if (cheapestCard) {
-            console.log(`Cheapest card identified: ${cheapestCard.id} with price ${lowestPrice}`);
+    // --- 차트 준비 함수 ---
+    function prepareChart() {
+        if (chartWidth === 0 || chartHeight === 0) {
+            if (!setChartDimensions()) {
+                console.warn("차트 준비: 차트 크기 설정 실패");
+                return false;
+            }
+        }
 
-            // 1단계: 선택된 카드에 부드러운 트랜지션 추가
-            cheapestCard.style.transition = "transform 1.5s cubic-bezier(0.1, 0.7, 0.1, 1), opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1), height 2s cubic-bezier(0.19, 1, 0.22, 1)";
-            
-            // 2단계: 다른 카드들도 페이드아웃할 준비
-            currentCards.forEach(card => {
-                if (card !== cheapestCard) {
-                    card.style.transition = "transform 1.5s cubic-bezier(0.1, 0.7, 0.1, 1), opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1)";
+        // **** SVG Gradient 추가 ****
+        let defs = svg.querySelector('defs');
+        if (!defs) {
+            defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            svg.insertBefore(defs, svg.firstChild); // grid 앞에 추가
+        }
+        if (!document.getElementById('area-gradient')) {
+            const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            gradient.setAttribute('id', 'area-gradient');
+            gradient.setAttribute('x1', '0%');
+            gradient.setAttribute('y1', '0%');
+            gradient.setAttribute('x2', '0%');
+            gradient.setAttribute('y2', '100%');
+            // Use style attributes for stop colors for broader compatibility
+            gradient.innerHTML = `
+                <stop offset="0%" style="stop-color:var(--cta-primary); stop-opacity:0.2" />
+                <stop offset="100%" style="stop-color:var(--cta-primary); stop-opacity:0" />
+            `;
+            defs.appendChild(gradient);
+        }
+        // **** Gradient 추가 끝 ****
+
+        drawGrid();
+
+        // 데이터 로드/처리 후 축 레이블 그리기 (initializeData 내부에서 값 설정됨)
+        if (activeData.length > 0) {
+            drawYAxisLabels(currentMinValue, currentMaxValue);
+            drawXAxisLabels();
+        }
+
+        setupListingLine();
+        setupChartInteraction();
+
+        return true;
+    }
+
+    // --- 메인 애니메이션 루프 (차트 전용) ---
+    function animateChart(timestamp) {
+        if (currentPhase !== 'CHART_ANIMATING') {
+             if (animationFrameId) cancelAnimationFrame(animationFrameId);
+             animationFrameId = null;
+             return;
+        }
+
+        try {
+            if (!lastTimestamp) lastTimestamp = timestamp;
+            const deltaTime = timestamp - lastTimestamp;
+            lastTimestamp = timestamp;
+            timeAccumulator += deltaTime;
+
+            let needsDataUpdate = false;
+            let chartAnimationShouldStop = false;
+
+            dataTimeAccumulator += deltaTime;
+            const dataPointsToAdvance = Math.floor(dataTimeAccumulator / updateInterval);
+
+            if (dataPointsToAdvance > 0) {
+                const targetDataIndex = dataIndex + dataPointsToAdvance;
+                while (dataIndex < targetDataIndex && dataIndex < fullData.length) {
+                    needsDataUpdate = true;
+                    activeData.shift();
+                    activeData.push(fullData[dataIndex]);
+                    dataIndex++;
                 }
-            });
-            
-            // 3단계: 카드 선택 및 동시에 텍스트 변경 시작
-            // Add 'selected' class to the chosen card and 'deselected' to others
-            currentCards.forEach(card => {
-                if (card === cheapestCard) {
-                    card.classList.add('selected');
-                    card.classList.remove('deselected');
-                    
-                    // 선택된 카드의 높이 설정을 점진적으로 변경
-                    setTimeout(() => {
-                        card.style.height = '434px'; // 높이 증가
-                    }, 100);
-                    
-                    // 선택된 카드에서 amount-saved만 숨기고 레이아웃은 그대로 유지
-                    const amountSavedElement = card.querySelector('.amount-saved');
-                    if (amountSavedElement) {
-                        // 먼저 데이터와 일치하도록 업데이트 후 숨김 처리
-                        const currentExchange = coinData[currentCoin].exchanges.find(ex => ex.name === card.dataset.exchangeName);
-                        if (currentExchange) {
-                            const amountValueElement = amountSavedElement.querySelector('.amount-value');
-                            if (amountValueElement) {
-                                amountValueElement.textContent = formatAmount(currentExchange.savingsAmount);
-                            }
-                        }
-                        
-                        // 업데이트 후 숨김 처리
-                        amountSavedElement.style.transition = 'opacity 0.7s ease';
-                        amountSavedElement.style.opacity = '0';
-                        setTimeout(() => {
-                            amountSavedElement.style.visibility = 'hidden';
-                        }, 700);
-                    }
+                dataTimeAccumulator -= dataPointsToAdvance * updateInterval;
+            }
+
+            if (listingLineElement && listingLabelElement && chartWidth > 0 && activeData.length > 1) {
+                const absoluteListingIndex = listingPointIndex;
+                const windowStartIndex = Math.max(0, dataIndex - activeData.length);
+                const relativeListingIndex = absoluteListingIndex - windowStartIndex;
+
+                if (relativeListingIndex >= 0 && relativeListingIndex < activeData.length) {
+                    const listingLineX = (relativeListingIndex / (activeData.length - 1)) * chartWidth;
+                    listingLineElement.style.left = `${listingLineX}px`;
+                    listingLabelElement.style.left = `${listingLineX}px`;
+                    listingLineElement.style.display = 'block';
+                    listingLabelElement.style.display = 'block';
                 } else {
-                    card.classList.add('deselected');
-                    card.classList.remove('selected');
-                    
-                    // 다른 카드들은 아이콘 표시 리셋
-                    const staticIcons = card.querySelector('.static-route-icons');
-                    const animatedRoute = card.querySelector('.animated-route');
-                    if (staticIcons) staticIcons.style.display = 'flex';
-                    if (animatedRoute) animatedRoute.innerHTML = '';
+                    listingLineElement.style.display = 'none';
+                    listingLabelElement.style.display = 'none';
                 }
-            });
-
-            // 4단계: 동시에 텍스트 변경 및 카드 애니메이션 시작
-            // Modify #kaito-intro content and prepare route animation
-            const kaitoIntro = document.getElementById('kaito-intro');
-            
-            // 경로 섹션 요소 미리 준비
-            const routeSection = cheapestCard.querySelector('.route-section');
-            if (routeSection) {
-                routeSection.style.display = 'block';
-                routeSection.style.opacity = '0';
-                routeSection.style.transition = 'opacity 0.8s ease';
             }
-            
-            // 카이토 인트로와 경로 섹션을 함께 페이드인
-            if (kaitoIntro) {
-                kaitoIntro.style.transition = 'opacity 0.3s ease-out';
-                kaitoIntro.style.opacity = '0';
-                
-                // 텍스트 변경 및 페이드인 시작 (더 빠르게)
-                setTimeout(() => {
-                    const iconWrapper = kaitoIntro.querySelector('.kaito-icon-wrapper');
-                    const introTextSpan = kaitoIntro.querySelector('span');
-                    
-                    if (iconWrapper) iconWrapper.style.display = 'none';
-                    
-                    // 로딩 스피너 생성 및 추가
-                    const spinner = document.createElement('div');
-                    spinner.className = 'loading-spinner';
-                    spinner.style.cssText = `
-                        display: inline-block;
-                        width: 16px;
-                        height: 16px;
-                        border: 2px solid transparent;
-                        border-top-color: #5D5FEF; /* 프라이머리 컬러 */
-                        border-radius: 50%;
-                        margin-right: 8px;
-                        vertical-align: middle;
-                        animation: spin 1s linear infinite;
-                    `;
-                    
-                    // 스피너 애니메이션 스타일 추가
-                    if (!document.querySelector('style#spinner-style')) {
-                        const spinnerStyle = document.createElement('style');
-                        spinnerStyle.id = 'spinner-style';
-                        spinnerStyle.textContent = `
-                            @keyframes spin {
-                                0% { transform: rotate(0deg); }
-                                100% { transform: rotate(360deg); }
-                            }
-                        `;
-                        document.head.appendChild(spinnerStyle);
-                    }
-                    
-                    if (introTextSpan) {
-                        introTextSpan.innerHTML = '';
-                        introTextSpan.appendChild(spinner);
-                        introTextSpan.appendChild(document.createTextNode(' 최적의 경로로 자동으로 구매해요'));
-                    }
-                    
-                    // 텍스트와 경로 섹션 동시에 페이드인 시작
-                    kaitoIntro.style.transition = 'opacity 0.3s ease-in';
-                    kaitoIntro.style.opacity = '1';
-                    
-                    // 경로 섹션도 동시에 페이드인
-                    if (routeSection) {
-                        routeSection.style.opacity = '1';
+
+            if (timeAccumulator >= initialDuration && !linePath.classList.contains('highlight')) {
+                console.log("상승 구간 시작, 라인 하이라이트 (시간 기준)");
+                linePath.classList.add('highlight');
+            }
+
+            const cardUpdateValue = (timeAccumulator < updateInterval && dataIndex <= visibleDataPoints)
+                                  ? priceStart
+                                  : (activeData.length > 0 ? activeData[activeData.length - 1] : priceStart);
+            updateHoldingCard(cardUpdateValue);
+
+            // 애니메이션 종료 조건 수정: dataIndex가 끝에 도달하면 종료
+            if (dataIndex >= fullData.length && currentPhase === 'CHART_ANIMATING') { // Ensure phase check
+                currentPhase = 'TRANSITION_TO_FOCUS'; // 전환 시작
+                console.log("차트 애니메이션 종료, Fade Out/In 전환 시작");
+                chartAnimationShouldStop = true; // Stop the requestAnimationFrame loop
+
+                const lastDataPoint = fullData[fullData.length - 1];
+                updateHoldingCard(lastDataPoint); // 최종 값으로 카드 업데이트
+
+                // --- 최종 상태 계산 ---
+                const finalBounds = getDataBounds(fullData);
+                const { line: fullPath, area: fullAreaPath } = generateFullStaticPath(fullData, finalBounds.min, finalBounds.max, curveTension); // Destructure
+                const finalListingX = (chartData.length > 1)
+                                    ? (listingPointIndex / (chartData.length - 1)) * chartWidth
+                                    : 0;
+
+                // 1. 현재 차트 요소 Fade Out
+                const fadeOutDuration = refocusDelay / 2; // 전환 시간 절반 사용
+                anime({
+                    targets: [linePath, priceArea, listingLineElement, listingLabelElement].filter(el => el), 
+                    opacity: 0,
+                    duration: fadeOutDuration,
+                    easing: 'easeInOutSine', // 수정: 부드러운 이징 적용
+                    complete: () => {
+                        // 2. Fade Out 완료 후 즉시 최종 상태 설정
+                        console.log("Fade Out 완료, 최종 상태 설정 및 Fade In 시작");
+                        // 최종 값 설정
+                        currentMinValue = finalBounds.min;
+                        currentMaxValue = finalBounds.max;
+                        // 최종 경로 설정
+                        linePath.setAttribute('d', fullPath);
+                        if (priceArea && fullAreaPath) priceArea.setAttribute('d', fullAreaPath); // **** Area 경로 설정 ****
+                        if (priceArea) priceArea.classList.add('visible'); // **** Area 보이도록 클래스 추가 ****
                         
-                        // 경로 애니메이션 시작 - 약간의 지연 추가 (카드 펼침이 약간 진행된 후)
-                        setTimeout(() => {
-                            const stopAnimation = animateRoute(cheapestCard);
-                            cheapestCard.dataset.stopAnimation = stopAnimation;
-                        }, 150); // 200ms -> 150ms로 더 빠르게
-                    }
-                }, 150); // 200ms -> 150ms로 더 빠르게
-            }
+                        // 레이블 그룹 초기 투명도 설정 (그리기 전에)
+                        if (yAxisLabelGroup) yAxisLabelGroup.style.opacity = 0;
+                        if (xAxisLabelGroup) xAxisLabelGroup.style.opacity = 0;
+                        
+                        // 최종 축 그리기
+                        drawYAxisLabels(currentMinValue, currentMaxValue);
+                        drawXAxisLabels(true);
+                        
+                        // 최종 상장선 위치 설정 및 표시
+                        if (listingLineElement && listingLabelElement) {
+                            listingLineElement.style.left = `${finalListingX}px`;
+                            listingLabelElement.style.left = `${finalListingX}px`;
+                            listingLineElement.style.display = 'block';
+                            listingLabelElement.style.display = 'block';
+                        }
 
-            // 5단계: 카드 선택 모드로 화면 전환
-            const screen1 = document.getElementById('screen1');
-            if (screen1) {
-                screen1.classList.add('card-selected-mode');
-            }
-        } else {
-            console.log("Could not determine the cheapest card.");
-        }
-    }
-
-    function updateCards(coinSymbol) {
-         console.log(`Updating cards for ${coinSymbol}`);
-         const data = coinData[coinSymbol];
-         if (!data) {
-             console.error(`No data found for coin symbol: ${coinSymbol}`);
-             return;
-         }
-
-         // --- Restore #kaito-intro content --- 
-         const kaitoIntro = document.getElementById('kaito-intro');
-         if (kaitoIntro) {
-             const iconWrapper = kaitoIntro.querySelector('.kaito-icon-wrapper');
-             const introTextSpan = kaitoIntro.querySelector('span');
-
-             kaitoIntro.classList.remove('hidden'); // Make intro visible if hidden by click
-             kaitoIntro.style.opacity = '1'; // Ensure visible
-             
-             if(iconWrapper) {
-                 iconWrapper.style.display = 'flex'; // Restore icon display
-             }
-             if(introTextSpan) {
-                 introTextSpan.textContent = '카이토 100만원 구매 시 최적의 경로에요';
-             }
-         }
-         // --- End of #kaito-intro restoration ---
-         
-         // 트랜지션 시간 및 효과를 위한 스타일 추가
-         const styleElement = document.createElement('style');
-         styleElement.textContent = `
-            .card {
-                transition: opacity 0.8s ease,
-                            transform 0.6s ease-out,
-                            top 0.8s cubic-bezier(0.33, 1, 0.68, 1),
-                            height 0.8s cubic-bezier(0.33, 1, 0.68, 1);
-                will-change: top, height;
-                width: calc(100% - 32px) !important;
-                margin-left: 16px !important;
-                margin-right: 16px !important;
-            }
-            .card.reorder-shadow {
-                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-                z-index: 10;
-            }
-         `;
-         document.head.appendChild(styleElement);
-
-         // 3. 금액 낮은 순으로 정렬 (price 기준으로 오름차순 정렬)
-         const sortedExchanges = [...data.exchanges].sort((a, b) => a.price - b.price);
-         
-         // card-selected-mode 클래스 제거
-         const screen1 = document.getElementById('screen1');
-         if (screen1) screen1.classList.remove('card-selected-mode');
-
-         const existingCards = cardContainer.querySelectorAll('.card');
-         
-         // 카드가 없는 경우 처음부터 생성
-         if (existingCards.length === 0) {
-             // 새 카드 생성 및 추가
-             sortedExchanges.forEach((exchange, index) => {
-                 const cardId = `card${index + 1}`;
-                 const cardElement = createCardElement(exchange, cardId, coinSymbol);
-                 cardContainer.appendChild(cardElement);
-                 cardElements.push(cardElement);
-
-                 // 클릭 이벤트 리스너 추가
-                 cardElement.addEventListener('click', () => {
-                     selectCard(cardElement);
-                 });
-
-                 // 카드 표시
-                 setTimeout(() => {
-                     cardElement.classList.remove('hidden-above', 'hidden-below');
-                     cardElement.classList.add('visible');
-                     const amountElement = cardElement.querySelector('.amount-saved .amount-value');
-                     if (amountElement) {
-                         // 애니메이션 속도 빠르게 조정 (2500ms -> 1000ms)
-                         animateCountUp(amountElement, exchange.savingsAmount, 1000);
-                     }
-                     
-                     // 가격 애니메이션 제거 - 초기 생성 시에는 애니메이션 적용하지 않음
-                 }, 50);
-                 
-                 // 카드 초기 위치 설정 (가격 변동 후 위치와 동일하게 설정)
-                 const newTop = index === 0 ? 0 : 
-                             index === 1 ? (176 + 16) : 
-                             index === 2 ? (176 + 16 + 120 + 16) : 
-                             (176 + 16 + (120 + 16) * 2);
-                 
-                 // 위치 및 높이 설정
-                 cardElement.style.position = 'absolute';
-                 cardElement.style.top = `${newTop}px`;
-                 
-                 // 높이 설정 (첫 번째 카드는 큰 사이즈, 나머지는 작은 사이즈)
-                 if (index === 0) {
-                     cardElement.style.height = '176px';
-                 } else {
-                     cardElement.style.height = '120px';
-                 }
-             });
-             
-             // 스타일 요소는 계속 유지 (제거하지 않음)
-             return;
-         }
-         
-         // 기존 카드가 있는 경우 재정렬 애니메이션 실행
-         
-         // 1. 현재 카드 정보 저장
-         const cardInfo = Array.from(existingCards).map(card => {
-             // 현재 수량 정보 저장 (텍스트에서 숫자만 추출)
-             const priceInfo = card.querySelector('.price-info');
-             let currentQuantity = 0;
-             if (priceInfo) {
-                 const quantityText = priceInfo.textContent;
-                 // "926.84개" 형식에서 숫자 부분만 추출
-                 currentQuantity = parseFloat(quantityText.replace(/[^0-9.]/g, '')) || 0;
-             }
-             
-             return {
-                 element: card,
-                 exchangeName: card.dataset.exchangeName,
-                 currentTop: card.offsetTop,
-                 currentPosition: parseInt(card.style.top || '0', 10),
-                 price: parseFloat(card.dataset.price || '0'),
-                 displayQuantity: currentQuantity, // 현재 표시된 수량 저장
-                 id: card.id
-             };
-         });
-         
-         // 2. 각 카드 요소의 내용을 업데이트하고 재정렬 위치 계산
-         sortedExchanges.forEach((exchange, index) => {
-             // 해당 거래소 이름을 가진 카드 찾기
-             const cardMatch = cardInfo.find(c => c.exchangeName === exchange.name);
-             
-             if (cardMatch) {
-                 const card = cardMatch.element;
-                 
-                 // 카드 데이터 업데이트
-                 card.dataset.price = exchange.price;
-                 
-                 // 최저가 레이블 처리 (첫 번째 카드에만 표시)
-                 const isNowFirstCard = index === 0;
-                 const lowestPriceLabel = card.querySelector('.lowest-price-label');
-                 
-                 // 최저가 레이블 업데이트
-                 if (lowestPriceLabel) {
-                     // 레이블이 있는 경우 표시 여부 업데이트
-                     lowestPriceLabel.style.display = isNowFirstCard ? 'inline-block' : 'none';
-                 } else if (isNowFirstCard) {
-                     // 레이블이 없고 첫 번째 카드인 경우 레이블 추가
-                     const exchangeNameElement = card.querySelector('.exchange-name');
-                     if (exchangeNameElement && !exchangeNameElement.querySelector('.lowest-price-label')) {
-                         const newLabel = document.createElement('span');
-                         newLabel.className = 'lowest-price-label';
-                         newLabel.style.cssText = 'background-color:#1d74ff; color:white; font-size:12px; padding:4px 8px; border-radius:6px; margin-left: 10px; opacity: 0.9; transition: opacity 1.2s ease;';
-                         newLabel.textContent = '최저가';
-                         exchangeNameElement.appendChild(newLabel);
-                     }
-                 }
-                 
-                 // 아낀 금액 섹션 표시 여부 처리
-                 const amountSavedElement = card.querySelector('.amount-saved');
-                 if (amountSavedElement) {
-                     // 첫 번째 카드인 경우만 표시, 그 외에는 숨김
-                     if (isNowFirstCard) {
-                         amountSavedElement.style.visibility = 'visible';
-                         amountSavedElement.style.display = 'block'; 
-                         amountSavedElement.style.opacity = '1';
-
-                         // 첫 번째 카드가 된 경우 금액 업데이트
-                         const amountElement = amountSavedElement.querySelector('.amount-value');
-                         if (amountElement) {
-                             const currentSavingsText = amountElement.textContent;
-                             const currentSavings = parseInt(currentSavingsText.replace(/[^0-9]/g, ''), 10) || 0;
-                             const newSavings = exchange.savingsAmount;
-                             
-                             console.log(`카드 ${card.id} 절약 금액 변경: ${formatAmount(currentSavings)} -> ${formatAmount(newSavings)}`);
-                             
-                             // 금액이 변경된 경우에만 애니메이션 적용
-                             if (currentSavings !== newSavings) {
-                                 animateCountUp(amountElement, newSavings, 1000);
-                             } else {
-                                 // 변경이 없으면 그냥 텍스트 설정
-                                 amountElement.textContent = formatAmount(newSavings);
-                             }
-                         }
-                     } else {
-                         amountSavedElement.style.visibility = 'hidden';
-                         amountSavedElement.style.display = 'none';
-                         amountSavedElement.style.opacity = '0';
-                     }
-                 } else if (isNowFirstCard) {
-                     // 첫 번째 카드인데 아낀 금액 요소가 없는 경우 추가
-                     const priceSection = card.querySelector('.price-section');
-                     if (priceSection && !priceSection.querySelector('.amount-saved')) {
-                         const newAmountSaved = document.createElement('div');
-                         newAmountSaved.className = 'amount-saved';
-                         newAmountSaved.style.cssText = 'font-size:14px; color:#666; margin-top:35px; visibility:visible;';
-                         newAmountSaved.innerHTML = `최대 <span class="amount-value">${formatAmount(exchange.savingsAmount)}</span>원 절약해요`;
-                         priceSection.appendChild(newAmountSaved);
-                     }
-                 }
-                 
-                 // 수량 정보 업데이트 - 애니메이션 추가
-                 const priceInfo = card.querySelector('.price-info');
-                 if (priceInfo) {
-                     // 100만원 기준 구매 가능 수량 계산
-                     const newPrice = exchange.price;
-                     // 1,000,000 / newPrice = 구매 가능 수량
-                     const newQuantity = 1000000 / newPrice;
-                     
-                     // 이전 수량에서 새 수량으로 애니메이션
-                     const oldQuantity = cardMatch.displayQuantity;
-                     
-                     console.log(`카드 ${card.id} 수량 변경: ${oldQuantity.toFixed(2)} -> ${newQuantity.toFixed(2)}`);
-                     
-                     // 수량이 변경된 경우에만 애니메이션 적용
-                     if (Math.abs(oldQuantity - newQuantity) > 0.01) {
-                         animateCountUp(priceInfo, newPrice, 1000);
-                     } else {
-                         // 변경이 없으면 그냥 텍스트 설정
-                         priceInfo.textContent = `${formatQuantity(newPrice)}개`;
-                     }
-                 }
-                 
-                 // 재정렬 위치 계산 (첫번째 카드는 0, 나머지는 간격을 둠)
-                 const newTop = index === 0 ? 0 : 
-                               index === 1 ? (176 + 16) : 
-                               index === 2 ? (176 + 16 + 120 + 16) : 
-                               (176 + 16 + (120 + 16) * 2);
-                 
-                 // 움직일 거리만 확인하여 애니메이션 효과 추가
-                 if (cardMatch.currentTop !== newTop || 
-                     (index === 0 && card.style.height !== '176px') || 
-                     (index !== 0 && card.style.height !== '120px')) {
-                     
-                     console.log(`카드 ${card.id} 위치 변경: top ${cardMatch.currentTop}px -> ${newTop}px`);
-                     
-                     // 현재 위치를 절대 위치로 설정하여 트랜지션 시작점 설정
-                     card.style.position = 'absolute';
-                     card.style.top = `${cardMatch.currentTop}px`;
-                     
-                     // 올라가는 카드는 더 높은 z-index를 가지도록 설정
-                     const isMovingUp = cardMatch.currentTop > newTop;
-                     card.style.zIndex = isMovingUp ? '10' : '5';
-                     
-                     // 카드 이동 애니메이션 설정 (약간의 지연 추가)
-                     setTimeout(() => {
-                         // 높이와 위치 동시에 트랜지션
-                         card.style.transition = `top ${isMovingUp ? '0.7s' : '0.9s'} cubic-bezier(0.33, 1, 0.68, 1), height 0.8s cubic-bezier(0.33, 1, 0.68, 1)`;
-                         
-                         // 높이 조정 (첫 번째 카드는 큰 사이즈, 나머지는 작은 사이즈)
-                         if (index === 0) {
-                             card.style.height = '176px';
-                         } else {
-                             card.style.height = '120px';
-                         }
-                         
-                         // 새 위치로 이동
-                         card.style.top = `${newTop}px`;
-                         
-                         // 애니메이션 완료 후 상태 정리
-                         setTimeout(() => {
-                             // 높이와 z-index를 제외한 시각적 효과 원상복구
-                             card.style.zIndex = '';
-                             card.style.position = '';
-                             card.style.transition = '';
-                         }, isMovingUp ? 800 : 1000);
-                     }, 50 + (isMovingUp ? 0 : 150));
-                 }
-             }
-         });
-         
-         // 스타일 요소는 계속 유지 - 제거하지 않음
-     }
-
-    function changeCoinAndUpdate() {
-        console.log("Changing coin...");
-        
-        // 타이틀 먼저 페이드 아웃
-        const mainCoinTitle = document.getElementById('main-coin-title');
-        if (mainCoinTitle) {
-            mainCoinTitle.style.transition = 'opacity 0.5s ease, transform 0.3s ease';
-            mainCoinTitle.style.opacity = '0';
-            mainCoinTitle.style.transform = 'translateY(-10px)';
-        }
-        
-        // 약간의 지연 후 코인 변경 및 UI 업데이트
-        setTimeout(() => {
-            currentCoin = 'BNB'; // Switch to BNB
-            updateCards(currentCoin);
-            
-            // 타이틀 페이드 인
-            setTimeout(() => {
-                if (mainCoinTitle) {
-                    mainCoinTitle.style.transform = 'translateY(0)';
-                    mainCoinTitle.style.opacity = '1';
-                }
-            }, 300);
-
-            // After updating cards for BNB, wait 4 seconds (5s total - 1s left) then select the cheapest
-            if (selectCardTimeoutId) clearTimeout(selectCardTimeoutId);
-            selectCardTimeoutId = setTimeout(() => {
-                selectCheapestCard();
-            }, 4500); // 4.5초 후 가장 싼 카드 선택 (카드 모두 표시 후 1.5초 더 대기)
-
-            // Restart the 5-second countdown for the new coin (BNB)
-            countdown = 5; // Reset countdown to 5 seconds
-            startCountdown(); // Start the countdown for BNB
-        }, 500);
-    }
-
-    function startUpdates() {
-        stopUpdates(); // Clear any existing timeouts/intervals
-
-        console.log("Starting initial update cycle (BNB)");
-        currentCoin = 'BNB'; // 시작부터 BNB로 설정
-        
-        // 처음에 바이빗이 3번째로 저렴하도록 가격 설정
-        const initialExchanges = coinData[currentCoin].exchanges;
-        const bybitExchange = initialExchanges.find(ex => ex.name === 'Bybit');
-        const otherExchanges = initialExchanges.filter(ex => ex.name !== 'Bybit');
-        
-        // 초기 설정: 다른 거래소 정렬
-        const sortedOthers = [...otherExchanges].sort((a, b) => a.price - b.price);
-        
-        // 가격 간격 계산
-        const avgPriceOthers = otherExchanges.reduce((sum, ex) => sum + ex.price, 0) / otherExchanges.length;
-        const priceStepOthers = Math.max(1000, Math.floor(avgPriceOthers * 0.01));
-        
-        // 바이빗을 3번째 순위로 만들기 위해 가격 조정
-        // 가장 저렴한 2개 거래소의 가격 + 약간의 가격 차이
-        if (sortedOthers.length >= 2) {
-            bybitExchange.price = sortedOthers[1].price + priceStepOthers;
-            console.log(`Bybit 초기 가격 설정: ${formatAmount(bybitExchange.price)}원 (3번째로 저렴)`);
-        }
-        
-        updateCards(currentCoin); // BNB로 업데이트
-
-        // 가격 변동 효과 추가: 1초 후에 가격을 변경하고 카드를 다시 정렬
-        setTimeout(() => {
-            const currentExchanges = coinData[currentCoin].exchanges;
-            const basePrice = coinData[currentCoin].price; // 기준 가격
-
-            // 1. Bybit과 나머지 거래소 분리
-            const bybitExchange = currentExchanges.find(ex => ex.name === 'Bybit');
-            const otherExchanges = currentExchanges.filter(ex => ex.name !== 'Bybit');
-
-            if (!bybitExchange) {
-                console.error("Bybit exchange not found in data!");
-                return; // Bybit 데이터 없으면 중단
-            }
-
-            // 2. 나머지 거래소들 정렬 (현재 가격 기준)
-            const sortedOthers = [...otherExchanges].sort((a, b) => a.price - b.price);
-
-            // 3. 나머지 거래소들의 목표 순서 생성 (현재 순서 뒤집기)
-            const targetOrderNamesOthers = sortedOthers.map(ex => ex.name).reverse();
-
-            // 4. 나머지 거래소들의 새 가격 할당 기준값 계산
-            const avgPriceOthers = otherExchanges.reduce((sum, ex) => sum + ex.price, 0) / otherExchanges.length;
-            const priceStepOthers = Math.max(1000, Math.floor(avgPriceOthers * 0.01));
-
-            console.log(`나머지 가격 재설정: 평균가=${formatAmount(avgPriceOthers)}, 간격=${formatAmount(priceStepOthers)}`);
-
-            let minOtherPrice = Infinity;
-
-            // 5. 나머지 거래소들에 목표 순서대로 새 가격 할당
-            targetOrderNamesOthers.forEach((exchangeName, index) => {
-                const exchangeToUpdate = otherExchanges.find(ex => ex.name === exchangeName);
-                if (exchangeToUpdate) {
-                    // 새 가격 계산 (나머지 거래소 내에서 순서 변경)
-                    const newPrice = Math.floor(avgPriceOthers + (index - Math.floor(targetOrderNamesOthers.length / 2)) * priceStepOthers);
-                    
-                    console.log(` - ${exchangeName}: ${formatAmount(exchangeToUpdate.price)} -> ${formatAmount(newPrice)} (새 순위: ${index + 1})`);
-                    exchangeToUpdate.price = newPrice;
-                    
-                    // 저장 금액도 함께 업데이트 (0 이하가 되지 않도록)
-                    // 실제 가격 차이의 약 40% 수준으로 절약 금액 계산 (더 현실적인 금액)
-                    const realSavings = Math.max(0, basePrice - newPrice);
-                    
-                    // 같은 거래소라도 동적인 절약 금액 표시를 위해 변동폭 추가 (±20% 범위)
-                    // 원래 절약 금액의 80%~120% 범위 내에서 약간의 변동을 줌
-                    const randomFactor = 0.8 + (Math.random() * 0.4); // 0.8~1.2 사이의 랜덤 값
-                    exchangeToUpdate.savingsAmount = Math.floor(realSavings * 0.4 * randomFactor);
-                    
-                    console.log(` - ${exchangeName} 절약 금액: ${formatAmount(exchangeToUpdate.savingsAmount)}원 (실제 차액의 40% × ${randomFactor.toFixed(2)})`);
-
-                    if (newPrice < minOtherPrice) {
-                        minOtherPrice = newPrice;
-                    }
-                }
-            });
-
-            // 6. Bybit 가격 설정 (나머지 최저가보다 항상 낮게)
-            // 나머지 최저가보다 가격 간격의 2배만큼 낮게 설정
-            const bybitNewPrice = minOtherPrice - (priceStepOthers * 2);
-            console.log(` - Bybit: ${formatAmount(bybitExchange.price)} -> ${formatAmount(bybitNewPrice)} (Guaranteed Lowest)`);
-            bybitExchange.price = bybitNewPrice;
-            
-            // 바이빗의 저장 금액 계산 (가격 변동 후)
-            // 기본 절약 금액 계산 - 다른 거래소와 동일하게 실제 가격 차이의 40% 수준으로 계산
-            const baseSavings = Math.max(0, basePrice - bybitNewPrice);
-            
-            // 변동된 가격에 따라 절약 금액도 살짝 증가 (기존 25,000보다 약간 높게)
-            const minSavingsAfterChange = 27000; // 변동 후 최소 보장 금액 수정 (25,000 -> 27,000)
-            
-            // 약간의 변동성 추가
-            const bybitRandomFactor = 0.95 + (Math.random() * 0.1); // 0.95~1.05 사이의 랜덤 값
-            const realSavings = Math.floor(baseSavings * 0.4 * bybitRandomFactor);
-            
-            // 최소 보장 금액과 실제 계산 금액 중 큰 값 사용
-            bybitExchange.savingsAmount = Math.max(minSavingsAfterChange, realSavings);
-            
-            console.log(` - Bybit 절약 금액: ${formatAmount(bybitExchange.savingsAmount)}원 (기본: ${formatAmount(realSavings)}원, 최소 보장: ${formatAmount(minSavingsAfterChange)}원)`);
-
-            // 다른 거래소들의 최대 절약 금액도 확인하여 바이빗이 항상 더 많은 혜택을 보이도록 조정
-            const maxOtherSavings = Math.max(...otherExchanges.map(ex => ex.savingsAmount || 0));
-            if (maxOtherSavings >= bybitExchange.savingsAmount) {
-                // 다른 거래소 중 최대 절약 금액보다 10% 더 많게 설정
-                bybitExchange.savingsAmount = Math.floor(maxOtherSavings * 1.1);
-                console.log(` - Bybit 절약 금액 조정: ${formatAmount(bybitExchange.savingsAmount)}원 (다른 거래소 최대값 ${formatAmount(maxOtherSavings)}원보다 10% 증가)`);
-            }
-
-            // 가격 변동 후 카드 업데이트 - 1초 딜레이
-            setTimeout(() => {
-                updateCards(currentCoin);
-                
-                // 가격 변동된 카드가 표시된 후 4초 지연 후 자동 선택 시작
-                if (selectCardTimeoutId) clearTimeout(selectCardTimeoutId);
-                selectCardTimeoutId = setTimeout(() => {
-                    selectCheapestCard();
-                }, 2800); // 가격 변동 후 2.8초 지연
-            }, 1800); // 가격 재할당 후 업데이트까지 1초 대기
-        }, 1800); // 초기 로딩 후 1초 후 가격 변경 시작
-
-        // 카운트다운 텍스트 숨기기
-        if (countdownTextElement) {
-            countdownTextElement.style.display = 'none';
-        }
-    }
-
-    function stopUpdates() {
-        if (updateTimeoutId) clearTimeout(updateTimeoutId);
-        if (selectCardTimeoutId) clearTimeout(selectCardTimeoutId);
-        updateTimeoutId = null;
-        selectCardTimeoutId = null;
-        console.log("Updates stopped.");
-
-         // Stop any ongoing route animations on existing cards
-         cardContainer.querySelectorAll('.card').forEach(card => {
-             const stopFunc = card.dataset.stopAnimation;
-             if (typeof stopFunc === 'function') {
-                 stopFunc();
-                 delete card.dataset.stopAnimation;
-             }
-             // Reset visual state if needed (e.g., show static icons)
-             const staticIcons = card.querySelector('.static-route-icons');
-             const animatedRoute = card.querySelector('.animated-route');
-             if (staticIcons) staticIcons.style.display = 'flex';
-             if (animatedRoute) animatedRoute.innerHTML = '';
-         });
-
-         // Remove card-selected-mode class when stopping updates
-         const screen1 = document.getElementById('screen1');
-         if (screen1) screen1.classList.remove('card-selected-mode');
-    }
-
-    function initializeScreen1() {
-        console.log("Initializing Screen 1");
-        startUpdates(); // Start the BTC -> Countdown -> BNB -> Select sequence
-    }
-
-    // --- Screen 2 Initialization ---
-    function initializeScreen2() {
-        // Trigger graph animation restart using class toggle
-        if (graphLine) {
-            // Remove the class to reset animation state
-            graphLine.classList.remove('animate');
-            // Force reflow/repaint 
-            void graphLine.offsetWidth;
-            // Add the class back to restart the animation
-            graphLine.classList.add('animate');
-        }
-
-        // Animate percentage value
-        if (percentageValueElement) {
-            // Reset text content to 0 before animating again
-            percentageValueElement.textContent = '0';
-            animateCountUp(percentageValueElement, 437, 2000, true);
-        }
-    }
-
-    // --- Screen 3 Initialization ---
-    function initializeScreen3() {
-        if (screen3AmountValues) {
-            screen3AmountValues.forEach(el => {
-                const targetValue = parseInt(el.textContent.replace(/[^0-9]/g, ''), 10);
-                if (!isNaN(targetValue)) {
-                    el.textContent = '0'; // Reset before animating
-                    animateCountUp(el, targetValue, 1500); // Animate amounts
-                }
-            });
-        }
-    }
-
-    // --- Slider Logic (Updated for 3 screens) ---
-    function goToScreen(screenIndex) {
-        if (!sliderWrapper || screenIndex < 0 || screenIndex > 2) return;
-
-        // 3번째 화면(주문 완료)이 없어지고 2단계까지만 표시하도록 수정
-        const percentages = screenIndex === 2 ? ['0%', '-50%'] : ['0%', '-50%'];
-        sliderWrapper.style.transform = `translateX(${percentages[Math.min(screenIndex, 1)]})`;
-        currentScreen = Math.min(screenIndex, 1); // 최대 1까지만 허용 (2단계)
-
-        // Initialize animations based on the target screen
-        if (screenIndex === 1) {
-             setTimeout(initializeScreen2, 100);
-        }
-        // Screen 2(index 2)로의 이동은 더이상 허용하지 않음
-        // 스크린 1로 돌아가는 경우
-        else if (screenIndex === 0 && cardContainer && countdownTextElement) {
-            // Optionally restart screen 1 animations/timers if stopped
-             startUpdates();
-        }
-
-        // Stop timers/animations of inactive screens
-        if (screenIndex !== 0) {
-            stopUpdates(); // Stop screen 1 timers
-        }
-    }
-
-    // Handle visibility change
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            // 타이머 정리
-            if (selectCardTimeoutId) clearTimeout(selectCardTimeoutId);
-            selectCardTimeoutId = null;
-        } else {
-            if (currentScreen === 0 && cardContainer) {
-                  console.log("Restarting screen 1 updates on visibility change (Restored)");
-                  startUpdates(); // Simply restart updates
-            } else if (currentScreen === 1) {
-                 initializeScreen2();
-            } else if (currentScreen === 2) {
-                 initializeScreen3();
-            }
-        }
-    });
-
-    // Initial Setup
-    if (cardContainer) {
-        startUpdates(); // 간소화된 초기화 과정 시작
-    } else {
-        // Logic for initializing if starting on screen 2 or 3
-        if (currentScreen === 1) initializeScreen2();
-        else if (currentScreen === 2) initializeScreen3();
-    }
-
-    // Button Navigation Logic (Updated for 2 screens)
-    const screen1Button = document.querySelector('#screen1 .btn.primary');
-    const screen2Button = document.querySelector('#screen2 .btn.primary');
-    const screen3Button = document.querySelector('#screen3 .btn.primary'); // Button on screen 3
-
-    if (screen1Button) {
-        screen1Button.addEventListener('click', () => goToScreen(1));
-    }
-    if (screen2Button) {
-        screen2Button.addEventListener('click', () => goToScreen(0)); // 2번 화면에서 1번 화면으로 돌아감
-    }
-    if (screen3Button) {
-        screen3Button.addEventListener('click', () => goToScreen(0)); // 3번 화면에서도 1번 화면으로 돌아감
-    }
-
-    // 카드 선택 및 관련 UI 업데이트를 처리하는 함수 추출
-    function selectCard(cardElement) {
-        if (!cardElement || cardElement.classList.contains('selected')) return;
-        
-        // Kaito 인트로 숨기기
-        const kaitoIntro = document.getElementById('kaito-intro');
-        if (kaitoIntro) {
-            kaitoIntro.classList.add('hidden');
-        }
-        
-        // 카드 선택 상태 업데이트
-        const allCards = cardContainer.querySelectorAll('.card');
-        allCards.forEach(card => card.classList.remove('selected'));
-        cardElement.classList.add('selected');
-        
-        // 화면 모드 변경
-        const screen1 = document.getElementById('screen1');
-        if (screen1) {
-            screen1.classList.add('card-selected-mode');
-        }
-        
-        // 다른 카드 숨기기
-        allCards.forEach(otherCard => {
-            if (otherCard !== cardElement) {
-                otherCard.classList.add('deselected');
-                otherCard.classList.remove('visible');
-            }
-        });
-        
-        // 경로 애니메이션 시작
-        setTimeout(() => {
-            animateRoute(cardElement);
-        }, 500);
-    }
-
-    // Add click event listener to each card - 마우스 클릭으로 카드 선택하는 기능 제거
-    // cardContainer.querySelectorAll('.card').forEach(card => {
-    //     card.addEventListener('click', () => {
-    //         selectCard(card);
-    //     });
-    // });
-
-    // 마지막 단계 처리를 위한 함수 추출
-    function handleFinalStep() {
-        // 카이토 인트로 텍스트 변경
-        const kaitoIntro = document.getElementById('kaito-intro');
-        if (kaitoIntro) {
-            const introTextSpan = kaitoIntro.querySelector('span');
-            if (introTextSpan) {
-                // 텍스트 변경 (최적의 경로로 자동 구매중 -> 주문 완료!)
-                kaitoIntro.style.transition = 'opacity 0.3s ease-out'; // 0.2s에서 원래값 0.3s로 복원
-                kaitoIntro.style.opacity = '0';
-                
-                setTimeout(() => {
-                    // 최신 절약 금액 가져오기 (데이터에서 직접 가져옴)
-                    const exchangeName = cardElement.dataset.exchangeName;
-                    const exchange = coinData[currentCoin].exchanges.find(ex => ex.name === exchangeName);
-                    const savedAmount = exchange ? exchange.savingsAmount : 
-                                     parseInt(cardElement.querySelector('.amount-value')?.textContent.replace(/[^0-9]/g, '') || '0', 10);
-                    
-                    // 항상 아낀 금액 표시
-                    introTextSpan.textContent = `최대 ${formatAmount(savedAmount)}원 아꼈어요!`;
-                    kaitoIntro.style.transition = 'opacity 0.3s ease-in'; // 0.2s에서 원래값 0.3s로 복원
-                    kaitoIntro.style.opacity = '1';
-                    
-                    console.log(`[handleFinalStep 수정] kaito-intro 업데이트: 최대 ${formatAmount(savedAmount)}원 아꼈어요!`);
-                }, 300); // 200ms에서 원래값 300ms로 복원
-            }
-        }
-    }
-
-    // 사전예약 버튼 클릭 이벤트 추가
-    const preSignupBtn = document.querySelector('.pre-signup-btn');
-    console.log('사전예약 버튼 요소:', preSignupBtn); // 디버깅을 위한 로그 추가
-    
-    if (preSignupBtn) {
-        preSignupBtn.addEventListener('click', function() {
-            console.log('사전예약 버튼 클릭됨!'); // 클릭 이벤트가 발생했는지 확인하는 로그
-            
-            // GA4 이벤트 트래킹 - CTA 버튼 클릭
-            if (typeof trackEvent === 'function') {
-                trackEvent('cta_button_click', {
-                    'button_text': preSignupBtn.textContent,
-                    'page_location': window.location.pathname
-                });
-            }
-            
-            // 간단한 모달 창 생성
-            const modal = document.createElement('div');
-            modal.className = 'signup-modal';
-            
-            const modalContent = document.createElement('div');
-            modalContent.className = 'modal-content';
-            
-            const closeBtn = document.createElement('span');
-            closeBtn.className = 'close-btn';
-            closeBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>`;
-            closeBtn.onclick = function() {
-                // GA4 이벤트 트래킹 - 모달 닫기 (제출 전)
-                if (typeof trackEvent === 'function') {
-                    trackEvent('modal_close', {
-                        'method': 'close_button',
-                        'stage': 'before_submit'
-                    });
-                }
-                document.body.removeChild(modal);
-            };
-            
-            const title = document.createElement('h3');
-            title.textContent = '출시되면 알려드릴게요!';
-            
-            const inputEmail = document.createElement('input');
-            inputEmail.type = 'text';
-            inputEmail.placeholder = '이메일을 입력해주세요';
-            
-            const submitBtn = document.createElement('button');
-            submitBtn.textContent = '알림 받기';
-            submitBtn.onclick = function() {
-                if (inputEmail.value.trim() === '') {
-                    alert('이메일을 입력해주세요!');
-                    return;
-                }
-                
-                // 폼 제출 시 감사 메시지 표시
-                modalContent.innerHTML = '';
-                
-                // GA4 이벤트 트래킹 - 이메일 제출 완료 (전환)
-                if (typeof trackEvent === 'function') {
-                    trackEvent('signup_complete', {
-                        'method': 'email',
-                        'value': 1,
-                        'email_domain': inputEmail.value.split('@')[1] || 'unknown'
-                    });
-                }
-                
-                const thankTitle = document.createElement('h3');
-                thankTitle.textContent = '사전예약이 완료되었어요!';
-                
-                const thankMessage = document.createElement('p');
-                thankMessage.textContent = 'ZKAP이 출시되면 가장 먼저 알려드릴게요.';
-                
-                const closeThankBtn = document.createElement('button');
-                closeThankBtn.textContent = '확인';
-                closeThankBtn.onclick = function() {
-                    // GA4 이벤트 트래킹 - 모달 닫기 (제출 후)
-                    if (typeof trackEvent === 'function') {
-                        trackEvent('modal_close', {
-                            'method': 'confirm_button',
-                            'stage': 'after_submit'
+                        // 3. 최종 상태 요소 Fade In (레이블 그룹 포함)
+                        anime({
+                            targets: [linePath, priceArea, listingLineElement, listingLabelElement, yAxisLabelGroup, xAxisLabelGroup].filter(el => el),
+                            opacity: 1, 
+                            duration: fadeOutDuration, 
+                            easing: 'easeInOutSine', // 수정: 부드러운 이징 적용
+                            /* begin 콜백 제거 */
+                            complete: () => {
+                                console.log("Fade In 완료, 최종 FOCUSED 상태");
+                                currentPhase = 'FOCUSED';
+                            }
                         });
                     }
-                    document.body.removeChild(modal);
-                };
-                
-                modalContent.appendChild(thankTitle);
-                modalContent.appendChild(thankMessage);
-                modalContent.appendChild(closeThankBtn);
-                
-                console.log('사전예약 신청:', inputEmail.value);
-            };
-            
-            modalContent.appendChild(closeBtn);
-            modalContent.appendChild(title);
-            modalContent.appendChild(inputEmail);
-            modalContent.appendChild(submitBtn);
-            
-            modal.appendChild(modalContent);
-            document.body.appendChild(modal);
-        });
-    }
+                });
 
-    function markStepComplete(stepElement) {
-        if (stepElement) {
-            stepElement.classList.add('completed');
-            
-            // 주문 완료 시 텍스트 변경
-            if (stepElement.classList.contains('step1-intro')) {
-                const textSpan = stepElement.querySelector('span');
-                if (textSpan) {
-                    textSpan.textContent = "주문이 완료됐어요";
-                }
+                // 이전 anime.js 전환 로직 제거
+                /* anime({... minY/maxY ...}); */
+                /* anime({... linePath d ...}); */
+                /* anime({... listing line left ...}); */
             }
+
+             if (activeData.length > 0 && currentPhase === 'CHART_ANIMATING') { // Only update bounds if still animating
+                const currentBounds = getDataBounds(activeData);
+                targetMinValue = currentBounds.min;
+                targetMaxValue = currentBounds.max;
+                currentMinValue += (targetMinValue - currentMinValue) * curveTension * 0.5;
+                currentMaxValue += (targetMaxValue - currentMaxValue) * curveTension * 0.5;
+             }
+
+            const needsRedraw = needsDataUpdate || Math.abs(targetMinValue - currentMinValue) > 0.001 || Math.abs(targetMaxValue - currentMaxValue) > 0.001;
+            if (needsRedraw && activeData.length > 0) {
+                const minY = currentMinValue;
+                const maxY = currentMaxValue;
+
+                const { line: newLinePath, area: newAreaPath } = generateCurvedPath(activeData, minY, maxY, curveTension); // Destructure
+                if (newLinePath !== null && newAreaPath !== null) { // Check both paths
+                    linePath.setAttribute('d', newLinePath);
+                    if (priceArea) {
+                        priceArea.setAttribute('d', newAreaPath); // **** Area 경로 업데이트 ****
+                        // Only make area visible if it wasn't already (avoid CSS transition flash)
+                        if (!priceArea.classList.contains('visible')) {
+                             priceArea.classList.add('visible'); // **** Area 보이도록 클래스 추가 ****
+                             // priceArea.style.opacity = 1; // **** 제거: CSS Transition에 맡김 ****
+                        }
+                    }
+                } else {
+                    console.warn("[animateChart] generateCurvedPath returned null.");
+                }
+                drawYAxisLabels(minY, maxY);
+                drawXAxisLabels(false); // 애니메이션 중 X축 그리기 (isStatic = false)
+            } else if (!needsRedraw) {
+                 // console.log("[animateChart] Skipping redraw.");
+             } else {
+                  console.warn("[animateChart] Skipping redraw due to empty activeData.");
+             }
+
+            if (chartAnimationShouldStop) {
+                console.log("[animateChart] Stopping animation loop.");
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            } else if (currentPhase === 'CHART_ANIMATING') { // Only request next frame if still animating
+                animationFrameId = requestAnimationFrame(animateChart);
+            }
+
+        } catch (error) {
+             showError(`차트 애니메이션 루프 오류: ${error.message}`);
+             if (animationFrameId) cancelAnimationFrame(animationFrameId);
+             animationFrameId = null;
+             currentPhase = 'IDLE';
+             initializeMasterAnimation(); // 루프 오류 시 초기화 시도
         }
     }
 
-    // DOM 요소 선택 등 기존 초기화 코드
-    const kaitoIntro = document.getElementById('kaito-intro');
-    const statusSpan = kaitoIntro ? kaitoIntro.querySelector('span') : null; // null 체크 추가
-    const targetText = "최적의 경로로 자동 구매 진행 중";
+    // --- 전체 애니메이션 초기화 및 자동 시작 ---
+    function initializeMasterAnimation() {
+        console.log("initializeMasterAnimation: 시작");
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+        currentPhase = 'IDLE';
 
-    // --- 스피너 가시성 관리 로직 --- START ---
-    if (kaitoIntro && statusSpan) { // 요소가 존재하는지 확인
-        // 스피너 표시 여부를 텍스트 내용에 따라 업데이트하는 함수
-        const updateSpinnerVisibility = () => {
-            // 앞뒤 공백 제거 후 텍스트 비교
-            if (statusSpan.textContent.trim() === targetText) {
-                kaitoIntro.classList.add('loading');
+        // 데이터 로드 및 처리 먼저 수행
+        if (!loadAndProcessData()) {
+             showError("데이터 로드 또는 처리에 실패하여 애니메이션을 시작할 수 없습니다.");
+             // 오류 메시지 표시 등 사용자에게 알림
+             if (appContainer) {
+                 appContainer.innerHTML = `<p style="color: red; text-align: center; margin-top: 50px;">오류: 차트 데이터를 로드할 수 없습니다.</p>`;
+             }
+             return; // 데이터 로드 실패 시 중단
+        }
+
+
+        // 초기 상태 설정
+        initialStateContainer.style.opacity = 1;
+        historyCard.classList.remove('fade-out');
+        historyCard.style.display = 'block';
+        historyCard.style.opacity = 1;
+        historyCard.style.transform = 'translateY(0)';
+        holdingCard.classList.remove('move-down', 'refocus');
+        holdingCard.style.opacity = 1;
+        scene2Container.classList.remove('visible', 'fade-out');
+
+        // 카드 내용 초기화 (데이터 로드 후 priceStart 사용)
+        const initialValueBasedOnNewStart = initialInvestmentValue; // 시작값은 투자금 그대로
+        holdingValueElement.textContent = `${formatNumber(initialValueBasedOnNewStart)}원`;
+        holdingQuantityElement.textContent = `${formatNumber(initialTokenQuantity)} KAITO`;
+        holdingPercentageElement.textContent = `(+0%, +0원)`;
+        holdingPercentageElement.classList.remove('positive');
+
+        // 차트 관련 요소 초기화
+        linePath.setAttribute('d', ''); // Clear path
+        linePath.style.opacity = 1; // Ensure line is visible initially
+        if (priceArea) {
+             priceArea.setAttribute('d', ''); // Clear area path
+             priceArea.classList.remove('visible'); // Hide area initially
+             priceArea.style.opacity = 0; // Ensure area starts hidden
+        }
+        linePath.classList.remove('highlight');
+        if(gridGroup) gridGroup.innerHTML = '';
+        if(xAxisLabelGroup) xAxisLabelGroup.innerHTML = '';
+        if(yAxisLabelGroup) yAxisLabelGroup.innerHTML = '';
+
+        // 차트 크기 설정 및 초기 그리기
+        if (setChartDimensions()) {
+            drawGrid();
+             // 데이터 초기화 (activeData 및 min/max 값 설정)
+            if (initializeData()) { // 초기화 성공 시 레이블 그림
+                drawYAxisLabels(currentMinValue, currentMaxValue);
+                drawXAxisLabels(false); // 초기 X축 (isStatic = false)
             } else {
-                kaitoIntro.classList.remove('loading');
+                 console.warn("데이터 초기화 실패, 축 레이블 생략");
             }
-        };
+            setupListingLine();
+            console.log("차트 준비: 차트 크기 설정 성공");
+        } else {
+            console.warn("초기화 중 차트 크기 설정 실패, 그리드/상장라인 건너뜀");
+        }
 
-        // 페이지 로드 시 초기 텍스트 상태 확인
-        updateSpinnerVisibility(); 
 
-        // MutationObserver를 사용하여 span 내부 텍스트 변화 감지
-        const observer = new MutationObserver((mutationsList) => {
-            for (const mutation of mutationsList) {
-                // 텍스트 내용 변경 감지 (characterData 또는 childList)
-                if (mutation.type === 'characterData' || mutation.type === 'childList') {
-                    updateSpinnerVisibility();
-                    break; // 관련된 변경이 감지되면 루프 종료
+        console.log("initializeMasterAnimation: 초기화 완료, 자동 시작 타이머 설정");
+
+        // 자동 시작 타이머 설정
+            setTimeout(() => {
+            console.log("자동 시작 타이머 콜백, 현재 Phase:", currentPhase);
+            if (currentPhase !== 'IDLE') return;
+
+            console.log("애니메이션 시작: 히스토리 숨김, 카드 이동, 차트 준비");
+            currentPhase = 'TRANSITION_TO_CHART';
+
+            // historyCard.classList.add('fade-out'); // 제거: anime.js로 제어
+            holdingCard.classList.add('move-down');
+
+            // 히스토리 카드를 anime.js로 동시에 사라지게 함
+            anime({
+                targets: historyCard,
+                opacity: 0,
+                translateY: 30, // 기존 fade-out 효과와 유사하게 약간 아래로 이동
+                duration: cardMoveDuration, // 보유 카드 이동 시간과 동일하게 설정
+                easing: 'easeInOutSine', // 부드러운 이징
+                complete: () => {
+                    historyCard.style.display = 'none'; // 애니메이션 후 완전히 숨김
                 }
+            });
+
+            setTimeout(() => {
+                scene2Container.classList.add('visible');
+                console.log("차트 컨테이너 visible 추가");
+            }, chartAppearDelay);
+
+            setTimeout(() => {
+                 if (currentPhase !== 'TRANSITION_TO_CHART') {
+                     console.log("[Timer] Bailing: Phase is not TRANSITION_TO_CHART.");
+                     return;
+                 }
+
+                 console.log("[Timer] 차트 애니메이션 시작 준비 (Static Data)");
+            if (!setChartDimensions()) {
+                     showError("차트 크기 설정 실패.");
+                     initializeMasterAnimation();
+                     return;
+                 }
+                 // 데이터 재초기화 (activeData 등 설정)
+                 if (!initializeData()) {
+                      showError("애니메이션 시작 시 데이터 초기화 실패.");
+                      initializeMasterAnimation();
+                 return;
             }
-        });
 
-        // Observer 설정: span 요소 내부의 텍스트 변경 및 자식 노드 변경 감지
-        const config = { characterData: true, childList: true, subtree: true };
+                 console.log("[Timer] 데이터 초기화 완료.");
 
-        // span 요소 관찰 시작
-        observer.observe(statusSpan, config);
-    } else {
-        console.error("스피너 제어를 위한 필수 요소(#kaito-intro 또는 내부 span)를 찾을 수 없습니다.");
+                  // 차트 준비 호출 (내부에서 인터랙션 설정 포함)
+                 if (!prepareChart()) {
+                     showError("차트 준비 실패 (prepareChart).");
+                     initializeMasterAnimation();
+                     return;
+                 }
+                 console.log("[Timer] 차트 준비 완료.");
+
+                 // Reset opacity before starting animation
+                 linePath.style.opacity = 1;
+                 if(priceArea) {
+                     priceArea.style.opacity = 0; // Keep area hidden until first draw
+                     priceArea.classList.remove('visible');
+                 }
+
+                 const { line: initialLinePath, area: initialAreaPath } = generateCurvedPath(activeData, currentMinValue, currentMaxValue, curveTension);
+                 if (initialLinePath) {
+                    linePath.setAttribute('d', initialLinePath);
+                    // if (priceArea && initialAreaPath) priceArea.setAttribute('d', initialAreaPath); // Set initial area path but keep invisible
+                    console.log("[Timer] Initial chart path set.");
+                 } else {
+                     showError("초기 라인 경로 생성 실패.");
+                     initializeMasterAnimation();
+                 return;
+            }
+
+                 console.log("[Timer] Setting phase to CHART_ANIMATING and requesting frame.");
+                 currentPhase = 'CHART_ANIMATING';
+            lastTimestamp = 0;
+            timeAccumulator = 0;
+                 dataTimeAccumulator = 0;
+            animationFrameId = requestAnimationFrame(animateChart);
+                 console.log("[Timer] Animation frame requested. ID:", animationFrameId);
+
+            }, Math.max(historyFadeDuration, cardMoveDuration));
+
+        }, autoStartDelay);
     }
-    // --- 스피너 가시성 관리 로직 --- END ---
-});
+
+    // --- Start the whole process ---
+    initializeMasterAnimation();
+
+    // --- 창 크기 변경 시 재초기화 ---
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+             console.log("창 크기 변경 - 애니메이션 재초기화");
+             initializeMasterAnimation(); // 데이터 포함 전체 재초기화
+         }, 250);
+    });
+
+    // --- 모달 관련 코드 (기존 유지) ---
+    const preSignupBtn = document.querySelector('.pre-signup-btn');
+    const modal = document.getElementById('signup-modal');
+    const closeBtn = document.querySelector('.close-btn');
+    const submitEmailBtn = document.getElementById('submit-email-btn');
+    const emailInput = document.getElementById('email-input');
+    if (preSignupBtn && modal && closeBtn && submitEmailBtn && emailInput) { preSignupBtn.addEventListener('click',()=>{modal.style.display='flex';if(typeof trackEvent==='function'){trackEvent('click_pre_signup',{'event_category':'conversion','event_label':'Open Signup Modal'});}});closeBtn.addEventListener('click',()=>{modal.style.display='none';});submitEmailBtn.addEventListener('click',()=>{const email=emailInput.value;if(validateEmail(email)){console.log('Email submitted:',email);alert('알림 신청이 완료되었습니다!');modal.style.display='none';emailInput.value='';if(typeof trackEvent==='function'){trackEvent('submit_email',{'event_category':'conversion','event_label':'Email Submitted'});}}else{alert('유효한 이메일 주소를 입력해주세요.');}});window.addEventListener('click',(event)=>{if(event.target===modal){modal.style.display='none';}}); } else { console.warn("모달 관련 요소 중 일부를 찾을 수 없습니다."); }
+
+}); // End DOMContentLoaded
+
+// --- 유틸리티 함수 (validateEmail, trackEvent - 이전과 동일) ---
+function validateEmail(email) { const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/; return re.test(String(email).toLowerCase()); }
+function trackEvent(event_name, parameters) { if (typeof gtag === 'function') { gtag('event', event_name, parameters || {}); } else { console.log('gtag not defined, skipping trackEvent:', event_name); } }

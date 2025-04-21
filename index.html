@@ -29,49 +29,122 @@
     <div id="app-container">
         <!-- 상단 타이틀 -->
         <div class="hook-message">
-            <h1 class="main-hook">은행 앱처럼 쉬운 DEX 투자,<br>ZKAP이 원클릭 자동화로 실현합니다.</h1>
-            <p class="sub-hook">CEX 상장 전 기회부터 다양한 온체인 활동까지,<br>ZKAP 하나로 간편하게 참여하세요.</p>
+            <h1 class="main-hook">거래소 상장 전 코인,<br>미리 투자해볼까요?</h1>
+            <p class="sub-hook">KAITO, 갖고 있었다면 <span class='highlight'>+268%</span> 수익이에요</p>
         </div>
 
-        <!-- 차트 카드 -->
-        <div class="chart-card">
-            <div class="chart-header">
-                <div class="coin-info">
+        <!-- 애니메이션 카드 -->
+        <div class="chart-card animation-container">
+
+            <!-- Initial State Container (Holding + History) -->
+            <div id="initial-state-container">
+                <!-- Scene 1: Holding Card (Initially Visible on Top) -->
+                <div id="holding-card" class="scene-container holding-card-style visible">
+                     <div class="asset-info">
                     <div class="coin-icon">
-                        <img src="./kaito_icon.png" alt="Coin Icon" onerror="this.src='./default_icon.png'; this.onerror=null;">
+                             <img src="images/kaito.png" alt="KAITO Icon" onerror="this.src='./default_icon.png'; this.onerror=null;">
+                         </div>
+                         <span class="coin-name">KAITO</span>
+                     </div>
+                     <div class="asset-value-container">
+                         <!-- Valuation Amount Row -->
+                         <div class="value-row">
+                             <span class="asset-label">평가 금액</span>
+                             <span id="holding-value" class="asset-value">1,000,000원</span>
+                         </div>
+                         <!-- Quantity Row -->
+                         <div class="value-row">
+                             <span class="asset-label">보유 수량</span>
+                             <span id="holding-quantity" class="asset-value token-quantity">0 KAITO</span> <!-- Placeholder -->
+                         </div>
+                         <!-- Profit Row -->
+                         <div class="profit-row">
+                            <span id="holding-percentage" class="asset-percentage">(+0%, +0원)</span>
+                         </div>
+                     </div>
+                </div>
+
+                <!-- Acquisition History Card (Initially Visible below holding) -->
+                <div id="history-card" class="history-card-style">
+                    <span class="history-label">최근 획득 내역 (ZKAP)</span>
+                    <div class="history-item">
+                        <span class="history-coin">Uniswap</span>
+                        <span class="history-amount">250,000원</span>
+                        <span class="history-status">구매 완료</span>
                     </div>
-                    <span class="coin-name">KAITO</span>
+                    <div class="history-item">
+                        <span class="history-coin">1inch</span>
+                        <span class="history-amount">300,000원</span>
+                        <span class="history-status">구매 완료</span>
+                    </div>
+                    <div class="history-item">
+                        <span class="history-coin">SushiSwap</span>
+                        <span class="history-amount">200,000원</span>
+                        <span class="history-status">구매 완료</span>
+                    </div>
+                    <div class="history-item">
+                        <span class="history-coin">Balancer</span>
+                        <span class="history-amount">200,000원</span>
+                        <span class="history-status">구매 완료</span>
+                    </div>
+                    <div class="history-item">
+                        <span class="history-coin">에어드랍</span>
+                        <span class="history-amount">50,000원</span>
+                        <span class="history-status">획득 완료</span>
+                    </div>
                 </div>
             </div>
             
-            <div class="chart-wrapper">
+            <!-- Scene 2: Chart Animation (Initially Hidden, positioned absolute) -->
+            <div id="scene2-container" class="scene-container chart-scene">
+                <div class="chart-header" id="scene2-header">
+                    <div class="coin-info">
+                         <div class="coin-icon">
+                            <img src="images/kaito.png" alt="KAITO Icon" onerror="this.src='./default_icon.png'; this.onerror=null;">
+                        </div>
+                        <div class="coin-title">
+                            <div class="coin-name-row">
+                                <span class="coin-name">KAITO</span>
+                                <span class="coin-ticker">KAITO</span>
+                            </div>
+                            <div class="price-row">
+                                <span class="current-price">₩3,983</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-wrapper" id="scene2-chart-wrapper">
                 <div class="chart-container">
                     <div class="flash-effect" id="flashEffect"></div>
                     <svg id="price-chart" preserveAspectRatio="none">
                         <g class="grid"></g>
                         <defs>
                             <clipPath id="preLineClip">
-                                <!-- Initially covers the whole chart width -->
                                 <rect id="preLineClipRect" x="0" y="0" width="300" height="150" /> 
                             </clipPath>
                         </defs>
                         <path class="area" id="price-area"></path>
                         <path class="line" id="price-line"></path>
-                    </svg>
+                            <!-- Add Crosshair Lines -->
+                            <line id="crosshair-v" class="crosshair-line" x1="0" y1="0" x2="0" y2="0"></line>
+                            <line id="crosshair-h" class="crosshair-line" x1="0" y1="0" x2="0" y2="0"></line>
+                            <!-- Add Axis Label Groups -->
+                            <g id="x-axis-labels" class="axis-labels"></g>
+                            <g id="y-axis-labels" class="axis-labels"></g>
+                        </svg>
+                    </div>
                 </div>
-                <div class="chart-info">
-                    <div id="final-percentage" class="chart-result"><span class="percentage-highlight">온체인 기회 포착</span>, ZKAP으로 간편하게!</div>
-                </div>
+                 <!-- Final message potentially moved or removed -->
+                 <!-- <p id="final-message" ...>ZKAP으로 간편하게 확인</p> -->
             </div>
+
         </div>
     </div>
 
-    <!-- CTA Container -->
+    <!-- CTA Container and Modal remain the same -->
     <div class="cta-container">
         <button class="pre-signup-btn">출시되면 알림을 받을게요</button>
     </div>
-
-    <!-- Email Signup Modal -->
     <div id="signup-modal" class="signup-modal" style="display: none;">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
